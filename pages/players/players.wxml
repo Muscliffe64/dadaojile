@@ -1,0 +1,23 @@
+<view class="container">
+  <view class="card">
+    <view class="card-title">添加参与人</view>
+    <view class="add-row">
+      <input class="input" placeholder="输入姓名" value="{{ inputVal }}" bindinput="onInput" bindconfirm="add" confirm-type="done"/>
+      <view class="btn-add" bindtap="add">添加</view>
+    </view>
+    <text class="hint">记录本局时从下列名单中选择 1 队、2 队各 2 人</text>
+  </view>
+
+  <view class="card list-card">
+    <view class="card-title">参与人列表 ({{ list.length }})</view>
+    <view class="player-list" wx:if="{{ list.length > 0 }}">
+      <view class="player-item" wx:for="{{ list }}" wx:key="*this">
+        <text class="player-name">{{ item }}</text>
+        <view class="btn-del" data-index="{{ index }}" bindtap="remove">删除</view>
+      </view>
+    </view>
+    <view class="empty" wx:else>
+      <text>暂无参与人，请先添加</text>
+    </view>
+  </view>
+</view>

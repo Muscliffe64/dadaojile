@@ -1,0 +1,12 @@
+.container { padding-bottom: 48rpx; }
+.card { background: #fff; border-radius: 20rpx; padding: 32rpx; margin: 28rpx; box-shadow: 0 4rpx 24rpx rgba(15,76,129,0.08); }
+.card-title { font-size: 34rpx; font-weight: 700; margin-bottom: 24rpx; }
+.table-list { margin-bottom: 24rpx; }
+.table-item { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 0; border-bottom: 1rpx solid #f0ede8; }
+.table-name { font-size: 30rpx; font-weight: 600; display: block; }
+.table-count { font-size: 24rpx; color: #999; }
+.table-actions { display: flex; gap: 24rpx; }
+.action-btn { font-size: 26rpx; color: #0f4c81; }
+.action-btn.danger { color: #c0392b; }
+.btn-add { width: 100%; margin: 0; padding: 24rpx; font-size: 30rpx; color: #0f4c81; background: transparent; border: 2rpx dashed #0f4c81; border-radius: 12rpx; }
+.btn-add::after { border: none; }

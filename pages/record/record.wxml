@@ -1,0 +1,181 @@
+<view class="container">
+  <view class="card">
+    <view class="form-item">
+      <text class="label">日期</text>
+      <picker mode="date" value="{{ date }}" start="2020-01-01" end="2030-12-31" bindchange="onDateChange">
+        <view class="picker">{{ date || '请选择' }}</view>
+      </picker>
+    </view>
+    <view class="form-item form-item-time">
+      <text class="label">写入时间</text>
+      <text class="written-at">保存时自动记录，如 {{ writtenAtPreview }}</text>
+    </view>
+
+    <view class="form-item">
+      <view class="label-row">
+        <text class="label">🎲 组队方式</text>
+        <text class="link" bindtap="goPlayers">管理参与人</text>
+      </view>
+      <picker mode="selector" range="{{ pairingLabels }}" value="{{ pairingIndex }}" bindchange="onPairingChange">
+        <view class="picker">{{ pairingLabels[pairingIndex] }}</view>
+      </picker>
+      <text class="hint">按抽签号决定占位提示，不影响已保存记录</text>
+    </view>
+
+    <view class="form-item">
+      <text class="label">1️⃣ 1队（2人）</text>
+      <view class="team-row">
+        <picker mode="selector" range="{{ options0 }}" data-slot="0" bindchange="onSlotSelect">
+          <view class="picker">{{ teamA[0] || placeholders[0] }}</view>
+        </picker>
+        <picker mode="selector" range="{{ options1 }}" data-slot="1" bindchange="onSlotSelect">
+          <view class="picker">{{ teamA[1] || placeholders[1] }}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">2️⃣ 2队（2人）</text>
+      <view class="team-row">
+        <picker mode="selector" range="{{ options2 }}" data-slot="2" bindchange="onSlotSelect">
+          <view class="picker">{{ teamB[0] || placeholders[2] }}</view>
+        </picker>
+        <picker mode="selector" range="{{ options3 }}" data-slot="3" bindchange="onSlotSelect">
+          <view class="picker">{{ teamB[1] || placeholders[3] }}</view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- ===== 过程记录模块 ===== -->
+    <view class="form-item rank-item">
+      <view class="label-row">
+        <text class="label">🎯 本局过程记录</text>
+        <view class="rank-toggle {{ rankEnabled ? 'on' : '' }}" bindtap="onRankToggle">
+          <view class="rank-toggle-dot"></view>
+        </view>
+      </view>
+
+      <block wx:if="{{ rankEnabled }}">
+        <!-- 比分牌 -->
+        <view class="scoreboard">
+          <view class="sb-team sb-{{ gameOver && gameOverSide === 'A' ? 'win' : '' }}">
+            <text class="sb-label">1队</text>
+            <text class="sb-level">{{ levelA }}</text>
+            <text class="sb-taoquan" wx:if="{{ taoquanA }}">套圈</text>
+          </view>
+          <view class="sb-mid">
+            <text class="sb-rounds">{{ rounds.length }} 手</text>
+            <text class="sb-vs">vs</text>
+          </view>
+          <view class="sb-team sb-{{ gameOver && gameOverSide === 'B' ? 'win' : '' }}">
+            <text class="sb-label">2队</text>
+            <text class="sb-level">{{ levelB }}</text>
+            <text class="sb-taoquan" wx:if="{{ taoquanB }}">套圈</text>
+          </view>
+        </view>
+
+        <!-- 游戏结束横幅 -->
+        <view class="game-over" wx:if="{{ gameOver }}">
+          <view class="game-over-title">🎉 {{ gameOverSide === 'A' ? '1队' : '2队' }} 掼蛋成功！</view>
+          <view class="game-over-sub">最终比分 {{ levelA }} : {{ levelB }}{{ taoquanA ? '（1队套圈）' : '' }}{{ taoquanB ? '（2队套圈）' : '' }}</view>
+          <view class="game-over-actions">
+            <view class="btn-outline-sm" bindtap="onRoundUndo">撤销上手</view>
+            <view class="btn-outline-sm danger" bindtap="onGameReset">重新开始</view>
+          </view>
+        </view>
+
+        <!-- 排名按钮 -->
+        <block wx:if="{{ !gameOver }}">
+          <text class="hint rank-hint">按顺序点击 4 个人：第 1 个=头游，第 2 个=二游，第 3 个=三游，剩下那位自动是末游。</text>
+          <view class="rank-grid">
+            <view
+              class="rank-btn {{ item.rank ? 'picked picked-' + item.rank : '' }} {{ item.disabled ? 'disabled' : '' }}"
+              wx:for="{{ rankSlots }}"
+              wx:key="key"
+              data-slot="{{ item.slot }}"
+              bindtap="onRankTap"
+            >
+              <text class="rank-team">{{ item.teamLabel }}</text>
+              <text class="rank-name">{{ item.name || item.placeholder }}</text>
+              <text class="rank-tag" wx:if="{{ item.rank }}">{{ item.rankLabel }}</text>
+              <text class="rank-tag rank-tag-empty" wx:else>点我标记</text>
+            </view>
+          </view>
+
+          <view class="rank-summary" wx:if="{{ rankPreview }}">
+            <view class="rank-summary-text">
+              <text class="rank-summary-line">{{ rankPreview.line1 }}</text>
+              <text class="rank-summary-line strong">{{ rankPreview.line2 }}</text>
+            </view>
+            <view class="rank-actions">
+              <view class="btn-commit" bindtap="onRoundCommit">✓ 确认本手</view>
+              <text class="rank-reset" bindtap="onRankReset">重选</text>
+            </view>
+          </view>
+
+          <view class="round-controls" wx:if="{{ rounds.length > 0 && !rankPreview }}">
+            <view class="btn-outline-sm" bindtap="onRoundUndo">撤销上手</view>
+            <view class="btn-outline-sm danger" bindtap="onGameReset">重新开始</view>
+          </view>
+        </block>
+
+        <!-- 手史 -->
+        <view class="history-block" wx:if="{{ rounds.length > 0 }}">
+          <view class="history-head" bindtap="toggleHistory">
+            <text class="history-title">📋 本场进度（{{ rounds.length }} 手）</text>
+            <text class="history-arrow">{{ historyExpanded ? '▾' : '▸' }}</text>
+          </view>
+          <view class="history-list" wx:if="{{ historyExpanded }}">
+            <view class="history-row" wx:for="{{ rounds }}" wx:key="summary" wx:for-index="ri">
+              <text class="history-idx">第 {{ ri + 1 }} 手</text>
+              <text class="history-text {{ item.passed ? 'win' : '' }} {{ item.taoquanTrigger ? 'taoquan' : '' }}">{{ item.summary }}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- ===== 手动控件：仅在未启用过程记录时显示 ===== -->
+    <block wx:if="{{ !rankEnabled }}">
+      <view class="form-item">
+        <text class="label">获胜方</text>
+        <radio-group bindchange="onWinnerChange" class="radio-row">
+          <label class="radio-item"><radio value="A" checked="{{ winner === 'A' }}"/> 1队</label>
+          <label class="radio-item"><radio value="B" checked="{{ winner === 'B' }}"/> 2队</label>
+        </radio-group>
+      </view>
+
+      <view class="form-item score-item">
+        <text class="label">比分</text>
+        <view class="score-row">
+          <picker mode="selector" range="{{ levels }}" value="{{ levelAIndex }}" bindchange="onLevelAChange" class="score-picker">
+            <view class="picker score-picker-inner">{{ levelA }}</view>
+          </picker>
+          <text class="score-colon">:</text>
+          <picker mode="selector" range="{{ levels }}" value="{{ levelBIndex }}" bindchange="onLevelBChange" class="score-picker">
+            <view class="picker score-picker-inner">{{ levelB }}</view>
+          </picker>
+        </view>
+        <view class="taoquan-row">
+          <text class="taoquan-label">套圈</text>
+          <view class="taoquan-checks">
+            <view class="taoquan-check {{ taoquanA ? 'on' : '' }}" bindtap="onTaoquanAToggle">
+              <view class="check-box">{{ taoquanA ? '✓' : '' }}</view>
+              <text>1队套圈</text>
+            </view>
+            <view class="taoquan-check {{ taoquanB ? 'on' : '' }}" bindtap="onTaoquanBToggle">
+              <view class="check-box">{{ taoquanB ? '✓' : '' }}</view>
+              <text>2队套圈</text>
+            </view>
+          </view>
+        </view>
+        <text class="hint">左右为 1、2 队级数（2→A1/A2/A3，打A三局）；套圈即多圈未过A，可双方分别勾选</text>
+      </view>
+    </block>
+  </view>
+
+  <view class="actions">
+    <button class="btn btn-cancel" bindtap="goBack">取消</button>
+    <button class="btn btn-submit" bindtap="submit">保存</button>
+  </view>
+</view>

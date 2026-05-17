@@ -1,0 +1,26 @@
+<view class="container">
+  <view class="card action-card">
+    <button class="btn btn-primary" plain bindtap="goGenerate" disabled="{{ loading }}">
+      {{ loading ? '生成中…' : '✨ 生成新报告' }}
+    </button>
+    <text class="action-hint">选择牌局与侧重，生成个性化分析报告</text>
+  </view>
+
+  <view class="card list-card" wx:if="{{ list.length > 0 }}">
+    <view class="card-title">📋 历史报告</view>
+    <view class="report-list">
+      <view class="report-item" wx:for="{{ list }}" wx:key="id" data-id="{{ item.id }}" bindtap="openReport">
+        <view class="report-meta">
+          <text class="report-date">{{ item.dateStr }}</text>
+          <text class="report-summary">{{ item.gameCount }} 局 · {{ item.dateRange || '-' }}</text>
+        </view>
+        <text class="report-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-list" wx:else>
+    <text class="empty-text">暂无历史报告</text>
+    <text class="empty-hint">点击上方按钮生成</text>
+  </view>
+</view>

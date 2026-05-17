@@ -1,0 +1,12 @@
+<view class="container">
+  <scroll-view class="report-scroll" scroll-y>
+    <view class="report-toolbar">
+      <view class="report-toolbar-left">
+        <view class="report-action" bindtap="goList">📋 报告列表</view>
+        <view class="report-action" bindtap="copyReport">📋 复制报告</view>
+      </view>
+      <button class="report-share-btn" open-type="share">📤 分享给好友</button>
+    </view>
+    <view class="report-body">{{ report }}</view>
+  </scroll-view>
+</view>

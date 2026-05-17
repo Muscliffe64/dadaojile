@@ -1,0 +1,145 @@
+<view class="container">
+  <!-- ① 顶部统计卡 + 胜率排行 -->
+  <view class="section">
+    <view class="table-row">
+      <picker mode="selector" range="{{ tables }}" range-key="name" value="{{ currentTableIndex }}" bindchange="onTableChange" class="table-picker-wrap">
+        <view class="table-picker">
+          <text class="table-label">🎴 牌局</text>
+          <text class="table-name">{{ currentTableName }}</text>
+          <text class="table-arrow">›</text>
+        </view>
+      </picker>
+      <view class="table-manage" bindtap="goTables">管理</view>
+    </view>
+
+    <view class="stats-row">
+      <view class="stat-block stat-blue">
+        <text class="stat-num">{{ total }}</text>
+        <text class="stat-label">总牌局数</text>
+      </view>
+      <view class="stat-block stat-gold">
+        <text class="stat-num">{{ weekTotal }}</text>
+        <text class="stat-label">本周牌局数</text>
+      </view>
+    </view>
+
+    <view class="section-head section-head-inset">
+      <text class="section-title">🏆 胜率排行</text>
+      <view class="section-link" bindtap="goLeaderboard">
+        <text>查看全部</text>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <view class="rank-list" wx:if="{{ topRanks.length > 0 }}">
+      <view class="rank-row" wx:for="{{ topRanks }}" wx:key="name">
+        <text class="rank-pos rank-pos-{{ item.rankClass || 'plain' }}">{{ item.medal || item.displayRank }}</text>
+        <text class="rank-name">{{ item.name }}</text>
+        <text class="rank-rate">{{ item.rate }}%</text>
+        <text class="rank-detail">{{ item.wins }}胜 / {{ item.games }}局</text>
+      </view>
+    </view>
+
+    <view class="rank-empty" wx:elif="{{ !isEmpty }}">
+      <text>暂无玩家达到上榜门槛</text>
+    </view>
+    <view class="rank-empty" wx:else>
+      <text>记录对局后查看排行</text>
+    </view>
+
+    <view class="rank-foot-hint" wx:if="{{ minGames > 0 && !isEmpty }}">
+      <text>参与不足 {{ minGames }} 局的玩家不参与排名</text>
+    </view>
+  </view>
+
+  <!-- ② 最近对局 -->
+  <view class="section">
+    <view class="section-head">
+      <text class="section-title">📋 最近对局</text>
+      <view class="section-link" bindtap="goHistory" wx:if="{{ recent.length > 0 }}">
+        <text>查看全部</text>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <view class="streak-board" wx:if="{{ currentStreaks.length > 0 }}">
+      <text class="streak-title">🔥 连胜中</text>
+      <view class="streak-tags">
+        <text class="streak-tag" wx:for="{{ currentStreaks }}" wx:key="name">{{ item.name }} {{ item.count }}连胜</text>
+      </view>
+    </view>
+
+    <block wx:if="{{ recent.length > 0 }}">
+      <view class="match-list">
+        <view class="match-card" wx:for="{{ recentDisplay }}" wx:key="id" bindtap="goHistory">
+          <view class="match-top">
+            <text class="match-date">{{ item.date }}</text>
+            <text class="match-score">{{ item.score }}</text>
+          </view>
+          <view class="match-mid">
+            <view class="team-chip team-1">
+              <view class="team-badge team-badge-1">1</view>
+              <text class="team-names">{{ item.teamA[0] }}+{{ item.teamA[1] }}</text>
+            </view>
+            <text class="vs">vs</text>
+            <view class="team-chip team-2">
+              <view class="team-badge team-badge-2">2</view>
+              <text class="team-names">{{ item.teamB[0] }}+{{ item.teamB[1] }}</text>
+            </view>
+          </view>
+          <view class="match-bot">
+            <text class="winner-pill winner-{{ item.winner }}">{{ item.winner === 'A' ? '1队胜' : '2队胜' }}</text>
+            <view class="match-rounds-toggle" wx:if="{{ item.hasRounds }}" data-id="{{ item.id }}" catchtap="toggleMatchRounds">
+              <text>{{ expandedRounds[item.id] ? '收起过程' : '看过程（' + item.roundsView.length + ' 手）' }}</text>
+              <text class="mrt-arrow">{{ expandedRounds[item.id] ? '∧' : '∨' }}</text>
+            </view>
+          </view>
+          <view class="match-rounds" wx:if="{{ item.hasRounds && expandedRounds[item.id] }}">
+            <view class="round-line {{ r.passed ? 'win' : '' }} {{ r.taoquanTrigger ? 'taoquan' : '' }}" wx:for="{{ item.roundsView }}" wx:for-item="r" wx:for-index="ri" wx:key="summary">
+              <text class="round-idx">第 {{ ri + 1 }} 手</text>
+              <text class="round-text">{{ r.summary }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="match-fold" bindtap="toggleRecent" wx:if="{{ recent.length > 3 }}">
+        <text>{{ recentExpanded ? '收起' : '展开更多（' + (recent.length - 3) + ' 条）' }}</text>
+        <text class="fold-arrow">{{ recentExpanded ? '∧' : '∨' }}</text>
+      </view>
+    </block>
+    <view class="rank-empty" wx:else>
+      <text>暂无对局记录</text>
+    </view>
+  </view>
+
+  <!-- ③ 操作按钮 -->
+  <view class="section section-actions">
+    <view class="action-grid">
+      <view class="action-btn" bindtap="goRecord">
+        <text class="action-icon">✏️</text>
+        <text class="action-label">记录本局</text>
+      </view>
+      <view class="action-btn" bindtap="goPlayers">
+        <text class="action-icon">👥</text>
+        <text class="action-label">参与人 ({{ playerCount }})</text>
+      </view>
+      <view class="action-btn" bindtap="goImport">
+        <text class="action-icon">📥</text>
+        <text class="action-label">数据交互</text>
+      </view>
+      <view class="action-btn action-btn-primary" bindtap="goAiReport">
+        <text class="action-icon">✨</text>
+        <text class="action-label">AI 分析报告</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="settings-entry" bindtap="goApiConfig">
+    <text class="se-icon">⚙️</text>
+    <view class="se-text">
+      <text class="se-title">设置</text>
+      <text class="se-sub">AI 报告 API · 上榜门槛 · 组队方式 等</text>
+    </view>
+    <text class="se-arrow">›</text>
+  </view>
+</view>

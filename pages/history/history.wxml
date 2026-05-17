@@ -1,0 +1,36 @@
+<view class="container">
+  <view class="card" wx:if="{{ list.length > 0 }}">
+    <view class="card-title">全部对局 ({{ list.length }})</view>
+    <text class="table-hint" wx:if="{{ tableName }}">牌局：{{ tableName }}</text>
+    <view class="history-list">
+      <view class="history-item" wx:for="{{ list }}" wx:key="id">
+        <view class="item-main">
+          <view class="item-meta">
+            <text class="item-date">{{ item.date }}</text>
+            <text class="item-score">{{ item.score }}</text>
+          </view>
+          <view class="item-teams">
+            <view class="team-cell"><text class="team-emoji">1️⃣</text><text>{{ item.teamA[0] }}+{{ item.teamA[1] }}</text></view>
+            <text class="vs">vs</text>
+            <view class="team-cell"><text class="team-emoji">2️⃣</text><text>{{ item.teamB[0] }}+{{ item.teamB[1] }}</text></view>
+          </view>
+          <view class="item-winner">{{ item.winner === 'A' ? '1队胜' : '2队胜' }}</view>
+          <view class="item-rounds-toggle" wx:if="{{ item.hasRounds }}" data-id="{{ item.id }}" catchtap="toggleRounds">
+            <text>{{ expanded[item.id] ? '收起过程' : '看过程（' + item.roundsView.length + ' 手）' }}</text>
+            <text class="rt-arrow">{{ expanded[item.id] ? '▾' : '▸' }}</text>
+          </view>
+          <view class="item-rounds" wx:if="{{ item.hasRounds && expanded[item.id] }}">
+            <view class="round-line {{ r.passed ? 'win' : '' }} {{ r.taoquanTrigger ? 'taoquan' : '' }}" wx:for="{{ item.roundsView }}" wx:for-item="r" wx:for-index="ri" wx:key="summary">
+              <text class="round-idx">第 {{ ri + 1 }} 手</text>
+              <text class="round-text">{{ r.summary }}</text>
+            </view>
+          </view>
+        </view>
+        <view class="btn-delete" data-id="{{ item.id }}" catchtap="onDelete">删除</view>
+      </view>
+    </view>
+  </view>
+  <view class="empty-state" wx:else>
+    <text class="empty-text">暂无对局记录</text>
+  </view>
+</view>

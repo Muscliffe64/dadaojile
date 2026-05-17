@@ -1,0 +1,429 @@
+.container {
+  padding: 8rpx 24rpx 80rpx;
+}
+
+.section {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 6rpx 24rpx rgba(15, 76, 129, 0.06);
+}
+
+/* ===== 顶部：牌局选择行 ===== */
+.table-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28rpx;
+}
+.table-picker-wrap { flex: 1; min-width: 0; }
+.table-picker {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  gap: 12rpx;
+  min-width: 0;
+}
+.table-label {
+  flex-shrink: 0;
+  color: #666;
+}
+.table-name {
+  flex: 1;
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 30rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.table-arrow {
+  flex-shrink: 0;
+  font-size: 32rpx;
+  color: #bbb;
+}
+.table-manage {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  color: #0f4c81;
+  font-weight: 500;
+  margin-left: 16rpx;
+  padding: 4rpx 12rpx;
+}
+
+/* ===== 两段统计：248 / 42 ===== */
+.stats-row {
+  display: flex;
+  align-items: stretch;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+.stat-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx 12rpx 28rpx;
+  background: #fbfaf6;
+  border-radius: 20rpx;
+}
+.stat-num {
+  font-size: 78rpx;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2rpx;
+}
+.stat-label {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #888;
+}
+.stat-blue .stat-num { color: #0f4c81; }
+.stat-gold .stat-num { color: #c9a449; }
+
+.rank-foot-hint {
+  margin-top: 16rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid #f4f1ec;
+  text-align: center;
+  font-size: 22rpx;
+  color: #aaa;
+}
+
+/* ===== 段落标题 ===== */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+.section-head-inset {
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f0ede8;
+}
+.section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.section-link {
+  display: flex;
+  align-items: center;
+  font-size: 24rpx;
+  color: #888;
+  gap: 4rpx;
+}
+.section-link .arrow {
+  font-size: 28rpx;
+  margin-left: 2rpx;
+}
+
+/* ===== 胜率排行（列表式）===== */
+.rank-list {
+  display: flex;
+  flex-direction: column;
+}
+.rank-row {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 4rpx;
+  border-bottom: 1rpx solid #f4f1ec;
+}
+.rank-row:last-child { border-bottom: none; }
+.rank-pos {
+  width: 56rpx;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 32rpx;
+  color: #999;
+  font-weight: 600;
+}
+.rank-pos-first, .rank-pos-second, .rank-pos-third {
+  font-size: 36rpx;
+}
+.rank-name {
+  flex: 1;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-left: 12rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-rate {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #0f4c81;
+  margin-right: 18rpx;
+  min-width: 110rpx;
+  text-align: right;
+}
+.rank-detail {
+  font-size: 22rpx;
+  color: #999;
+  min-width: 150rpx;
+  text-align: right;
+}
+
+.rank-empty {
+  padding: 40rpx 0;
+  text-align: center;
+  color: #999;
+  font-size: 26rpx;
+}
+
+/* ===== 连胜板 ===== */
+.streak-board {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 20rpx;
+  margin-bottom: 20rpx;
+  background: #fff8e6;
+  border-radius: 14rpx;
+}
+.streak-title {
+  flex: none;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #9a5b00;
+}
+.streak-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+.streak-tag {
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  color: #c9a449;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+/* ===== 对局卡 ===== */
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+.match-card {
+  padding: 24rpx 26rpx 20rpx;
+  background: #fbfaf6;
+  border-radius: 18rpx;
+}
+.match-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18rpx;
+}
+.match-date {
+  font-size: 26rpx;
+  color: #999;
+}
+.match-score {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.match-mid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  margin-bottom: 16rpx;
+}
+.team-chip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+.team-badge {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.team-badge-1 { background: #0f4c81; }
+.team-badge-2 { background: #c9a449; }
+.team-names {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vs {
+  font-size: 24rpx;
+  color: #bbb;
+  flex-shrink: 0;
+  padding: 0 4rpx;
+}
+.match-bot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.winner-pill {
+  font-size: 24rpx;
+  font-weight: 600;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  color: #fff;
+}
+.winner-A { background: #5eb83a; }
+.winner-B { background: #5eb83a; }
+
+.match-rounds-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 22rpx;
+  color: #0f4c81;
+  padding: 6rpx 14rpx;
+  background: #eef4fb;
+  border-radius: 999rpx;
+}
+.match-rounds-toggle .mrt-arrow {
+  font-size: 22rpx;
+  color: #0f4c81;
+}
+.match-rounds {
+  margin-top: 16rpx;
+  padding: 14rpx 16rpx;
+  background: #f4f1ea;
+  border-radius: 12rpx;
+}
+.round-line {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  padding: 6rpx 0;
+  font-size: 24rpx;
+  color: #444;
+  line-height: 1.5;
+}
+.round-line + .round-line {
+  border-top: 2rpx solid #e8e3d8;
+}
+.round-line .round-idx {
+  font-size: 22rpx;
+  color: #999;
+  flex-shrink: 0;
+  min-width: 88rpx;
+}
+.round-line .round-text { flex: 1; }
+.round-line.win .round-text {
+  color: #0f4c81;
+  font-weight: 700;
+}
+.round-line.taoquan .round-text {
+  color: #b87333;
+}
+
+.match-fold {
+  margin-top: 18rpx;
+  padding: 16rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #0f4c81;
+}
+.fold-arrow {
+  margin-left: 8rpx;
+  font-size: 24rpx;
+  color: #0f4c81;
+}
+
+/* ===== 操作按钮 2×2 网格（图标+文字横排，按钮更大）===== */
+.section-actions {
+  padding: 28rpx 32rpx;
+}
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+.action-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  padding: 36rpx 14rpx;
+  border-radius: 20rpx;
+  background: #fff;
+  border: 2rpx solid #e8e4dc;
+}
+.action-icon {
+  font-size: 40rpx;
+  line-height: 1;
+}
+.action-label {
+  font-size: 30rpx;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+.action-btn-primary {
+  background: linear-gradient(135deg, #0f4c81 0%, #1a6bb5 100%);
+  border-color: transparent;
+  box-shadow: 0 4rpx 16rpx rgba(15, 76, 129, 0.22);
+}
+.action-btn-primary .action-label {
+  color: #fff;
+}
+
+/* ===== 设置入口：比脚注醒目，但明显小于上方 4 个操作按钮 ===== */
+.settings-entry {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin: 4rpx 0 28rpx;
+  padding: 20rpx 28rpx;
+  background: #fff;
+  border: 2rpx solid #e8e4dc;
+  border-radius: 18rpx;
+}
+.se-icon {
+  font-size: 32rpx;
+  line-height: 1;
+}
+.se-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+  min-width: 0;
+}
+.se-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.se-sub {
+  font-size: 22rpx;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.se-arrow {
+  font-size: 34rpx;
+  color: #ccc;
+  line-height: 1;
+}

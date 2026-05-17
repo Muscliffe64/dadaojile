@@ -1,0 +1,51 @@
+<view class="container">
+  <view class="history-entry" wx:if="{{ historyCount > 0 }}" bindtap="goHistoryReports">
+    <view class="he-icon">📚</view>
+    <view class="he-text">
+      <text class="he-title">历史报告</text>
+      <text class="he-sub">已生成 {{ historyCount }} 份，点击查看</text>
+    </view>
+    <text class="he-arrow">›</text>
+  </view>
+
+  <view class="card">
+    <view class="card-title">🎴 选择牌局</view>
+    <text class="card-hint">可多选，所选牌局将合并分析</text>
+    <view class="table-check-group">
+      <view class="table-check-item" wx:for="{{ tables }}" wx:key="id" data-id="{{ item.id }}" bindtap="onTableTap">
+        <view class="check-icon {{ tableChecked[item.id] ? 'checked' : '' }}">{{ tableChecked[item.id] ? '✓' : '' }}</view>
+        <text class="table-check-name">{{ item.name }}</text>
+        <text class="table-check-count">({{ counts[item.id] || 0 }} 局)</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">📌 报告侧重</view>
+    <text class="card-hint">可多选，你想了解什么？</text>
+    <view class="focus-group">
+      <view class="focus-item" wx:for="{{ focusOptions }}" wx:key="value" data-value="{{ item.value }}" bindtap="onFocusTap">
+        <view class="check-icon {{ focusChecked[item.value] ? 'checked' : '' }}">{{ focusChecked[item.value] ? '✓' : '' }}</view>
+        <view class="focus-text">
+          <text class="focus-label">{{ item.label }}</text>
+          <text class="focus-desc">{{ item.desc }}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">✏️ 补充说明</view>
+    <text class="card-hint">可选：输入你的想法，如「重点分析张三和李四」「多写点幽默吐槽」</text>
+    <textarea class="custom-input" placeholder="在此输入…" value="{{ customInput }}" bindinput="onCustomInput" maxlength="200"/>
+  </view>
+
+  <view class="actions">
+    <button class="btn btn-primary" plain bindtap="submit" disabled="{{ loading }}">
+      {{ loading ? '生成中…' : '✨ 生成报告' }}
+    </button>
+  </view>
+  <view class="footer-link" bindtap="goApiConfig">
+    <text>设置</text>
+  </view>
+</view>

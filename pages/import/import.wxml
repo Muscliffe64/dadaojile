@@ -1,0 +1,144 @@
+<view class="container">
+  <!-- 1. 数据导入（置顶） -->
+  <view class="card card-import">
+    <view class="card-title">📥 数据导入</view>
+    <text class="card-desc">将外部 CSV 数据批量导入到当前牌局。可粘贴文本或选择本地 .csv / .txt 文件。</text>
+    <text class="table-hint" wx:if="{{ tableName }}">导入到：{{ tableName }}</text>
+
+    <view class="step step-data">
+      <view class="step-label">① 准备数据</view>
+      <text class="step-desc">支持带表头或纯数据。表头会被自动识别并跳过。</text>
+      <view class="row-actions">
+        <view class="btn-secondary" bindtap="chooseFile">选择文件</view>
+        <view class="btn-secondary" bindtap="clear">清空输入</view>
+      </view>
+      <textarea class="textarea" placeholder="粘贴 CSV 内容，或通过上方按钮选择文件…" value="{{ textarea }}" bindinput="onInput" maxlength="-1"/>
+    </view>
+
+    <view class="step step-settings">
+      <view class="step-label">② 导入方式</view>
+      <view class="mode-group">
+        <view class="mode-option {{ importMode === 'append' ? 'active' : '' }}" data-value="append" bindtap="setImportMode">叠加</view>
+        <view class="mode-option {{ importMode === 'clear' ? 'active' : '' }}" data-value="clear" bindtap="setImportMode">清空后导入</view>
+      </view>
+      <text class="step-desc" wx:if="{{ importMode === 'append' }}">追加到当前牌局，配合"去重"可避免重复行。</text>
+      <text class="step-desc" wx:else>先清空当前牌局已有对局，再写入新数据。</text>
+      <view class="opt-row opt-dedupe" wx:if="{{ importMode === 'append' }}">
+        <text class="opt-label">去重</text>
+        <switch checked="{{ dedupe }}" bindchange="onDedupeChange" color="#0f4c81"/>
+      </view>
+    </view>
+
+    <view class="step step-execute">
+      <view class="step-label">③ 执行</view>
+      <view class="row-actions">
+        <button class="btn btn-primary" bindtap="doImport" disabled="{{ loading }}">{{ loading ? '导入中…' : '开始导入' }}</button>
+        <view class="btn-link-wrap" wx:if="{{ canUndo }}">
+          <text class="btn-link" bindtap="undoImport">撤销上一轮导入</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="result-card" wx:if="{{ result }}">
+      <view class="result-title">导入结果</view>
+      <text>成功 {{ result.success }} 条</text>
+      <text wx:if="{{ result.skipped > 0 }}">，跳过 {{ result.skipped }} 条</text>
+      <text wx:if="{{ result.fail > 0 }}">，失败 {{ result.fail }} 条</text>
+    </view>
+  </view>
+
+  <!-- 2. 格式说明 -->
+  <view class="card">
+    <view class="card-title">📋 导入格式说明</view>
+    <text class="card-desc">每行一局对局，逗号分隔，共 7 列。首行可保留表头，系统会自动跳过。</text>
+
+    <text class="format-code">日期,甲1,甲2,乙1,乙2,获胜方,比分
+2026-01-03,张三,李四,王五,赵六,A,A1:A2
+2026-01-03,张三,王五,李四,赵六,B,A2:A2 2队套圈</text>
+
+    <view class="copy-sample" bindtap="copySample">复制示例</view>
+
+    <view class="field-table">
+      <view class="field-row">
+        <text class="field-name">日期</text>
+        <text class="field-desc">YYYY-MM-DD 或 YYYY/M/D，如 2026-01-03 / 2026/1/3</text>
+      </view>
+      <view class="field-row">
+        <text class="field-name">甲1 / 甲2</text>
+        <text class="field-desc">1 队两位玩家的姓名（不能与乙队重复）</text>
+      </view>
+      <view class="field-row">
+        <text class="field-name">乙1 / 乙2</text>
+        <text class="field-desc">2 队两位玩家的姓名</text>
+      </view>
+      <view class="field-row">
+        <text class="field-name">获胜方</text>
+        <text class="field-desc">A = 1 队胜，B = 2 队胜</text>
+      </view>
+      <view class="field-row">
+        <text class="field-name">比分</text>
+        <text class="field-desc">1队级数:2队级数，如 A1:A2；可在尾部追加" 1队套圈"或" 2队套圈"，两队都套圈可同时写</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 3. 导出 -->
+  <view class="card">
+    <view class="card-title">📤 导出 · 本牌局 {{ recordCount }} 场</view>
+
+    <view class="export-row">
+      <text class="export-label">范围</text>
+      <picker mode="selector" range="{{ exportRangeLabels }}" value="{{ exportRangeIndex }}" bindchange="onExportRangeChange" class="export-picker">
+        <view class="picker-view">
+          <text>{{ exportRangeLabels[exportRangeIndex] }}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="export-row export-custom" wx:if="{{ exportRange === 'custom' }}">
+      <picker mode="date" value="{{ customStart }}" end="{{ customEnd }}" bindchange="onCustomStartChange" class="export-picker-half">
+        <view class="picker-view"><text>起 {{ customStart || '请选择' }}</text></view>
+      </picker>
+      <text class="picker-dash">—</text>
+      <picker mode="date" value="{{ customEnd }}" start="{{ customStart }}" bindchange="onCustomEndChange" class="export-picker-half">
+        <view class="picker-view"><text>止 {{ customEnd || '请选择' }}</text></view>
+      </picker>
+    </view>
+
+    <view class="export-row">
+      <text class="export-label">格式</text>
+      <view class="format-seg">
+        <view
+          class="format-seg-item {{ exportFormat === item.value ? 'active' : '' }}"
+          wx:for="{{ exportFormatOptions }}"
+          wx:key="value"
+          data-value="{{ item.value }}"
+          bindtap="onExportFormatTap"
+        >
+          <text class="format-label">{{ item.label }}</text>
+          <text class="format-desc">{{ item.desc }}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="export-preview">
+      <text>已选 {{ exportPreviewCount }} 场 · {{ exportFormat === 'full' ? '完整版（备份/朋友互导）' : '按手展开（看/AI）' }}</text>
+    </view>
+
+    <button class="btn btn-primary export-send" bindtap="shareExport" disabled="{{ exportPreviewCount === 0 }}">
+      📤 发送 .csv 文件
+    </button>
+    <view class="export-copy-link {{ exportPreviewCount === 0 ? 'disabled' : '' }}" bindtap="copyExport">
+      <text>或 复制到剪贴板（适合 &lt; 100 场少量数据）</text>
+    </view>
+  </view>
+
+  <!-- 重置 -->
+  <view class="card danger-card">
+    <view class="card-title">⚠️ 重置</view>
+    <text class="danger-hint">将清空所有对局、参与人、牌局和报告历史，仅保留默认牌局。此操作不可恢复。</text>
+    <text class="danger-tip">建议先在上方"导出"中复制 CSV 保存，方便日后通过"导入"恢复，避免数据丢失。</text>
+    <view class="btn-reset" bindtap="clearAllData">清空所有数据</view>
+  </view>
+</view>

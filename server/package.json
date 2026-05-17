@@ -1,0 +1,13 @@
+{
+  "name": "guandan-ai-report-api",
+  "version": "1.0.0",
+  "description": "掼蛋宝 AI 比赛分析报告 API（已暂停外部模型调用）",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  }
+}

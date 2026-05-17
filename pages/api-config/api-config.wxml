@@ -1,0 +1,53 @@
+<view class="container">
+  <view class="card">
+    <view class="card-title">🏆 排行榜门槛</view>
+    <text class="card-hint">参与不足设定局数的玩家不计入正式排名。每个牌局可单独设置；未单独设置时默认为 0（所有玩家都入榜）。</text>
+
+    <text class="field-hint">从下面选择一个牌局，输入局数后点添加，已添加的会出现在列表里</text>
+
+    <view class="add-row">
+      <picker mode="selector" range="{{ tableNames }}" value="{{ pickerIndex }}" bindchange="onPickerChange" class="add-picker" disabled="{{ tables.length === 0 }}">
+        <view class="picker-view {{ tables.length === 0 ? 'picker-disabled' : '' }}">
+          <text class="picker-text">{{ tables.length === 0 ? '暂无牌局' : (tableNames[pickerIndex] || '请选择') }}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+      <input class="input add-input" type="number" placeholder="局数" value="{{ addInput }}" bindinput="onAddInput"/>
+      <view class="btn-add" bindtap="addOverride">添加</view>
+    </view>
+
+    <view class="override-section">
+      <view class="override-section-title">已设置</view>
+      <view class="override-list" wx:if="{{ overrides.length > 0 }}">
+        <view class="override-item" wx:for="{{ overrides }}" wx:key="id">
+          <text class="override-name">{{ item.name }}</text>
+          <text class="override-value">{{ item.value }} 局</text>
+          <text class="override-del" data-id="{{ item.id }}" bindtap="removeOverride">移除</text>
+        </view>
+      </view>
+      <view class="empty-row" wx:else>
+        <text>暂无单独设置（所有牌局门槛为 0）</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">DeepSeek API Key</view>
+    <text class="card-hint">AI 报告功能需配置 DeepSeek API Key（从 platform.deepseek.com 获取）。发版前请在小程序后台 → 开发设置 → 服务器域名 添加 https://api.deepseek.com</text>
+    <view class="apikey-wrap">
+      <input
+        class="input apikey-input"
+        type="text"
+        placeholder="点击这里输入 sk-..."
+        placeholder-class="apikey-placeholder"
+        value="{{ apiKey }}"
+        confirm-type="done"
+        cursor-spacing="40"
+        bindinput="onInput"
+        bindfocus="onApiKeyFocus"
+        bindblur="onApiKeyBlur"
+      />
+    </view>
+    <button class="btn btn-primary" bindtap="save">保存 Key</button>
+  </view>
+</view>

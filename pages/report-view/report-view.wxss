@@ -1,0 +1,55 @@
+.container {
+  min-height: 100vh;
+  background: #fff;
+}
+
+.report-scroll {
+  height: 100vh;
+  padding: 32rpx 36rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.report-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #f0ede8;
+}
+
+.report-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.report-action {
+  font-size: 28rpx;
+  color: #0f4c81;
+}
+
+.report-share-btn {
+  padding: 0 24rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 26rpx;
+  color: #0f4c81;
+  background: #e8f0f8;
+  border-radius: 12rpx;
+  border: none;
+}
+
+.report-share-btn::after {
+  border: none;
+}
+
+.report-body {
+  font-size: 34rpx;
+  line-height: 1.85;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

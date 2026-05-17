@@ -1,0 +1,23 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/record/record",
+    "pages/history/history",
+    "pages/players/players",
+    "pages/import/import",
+    "pages/leaderboard/leaderboard",
+    "pages/tables/tables",
+    "pages/api-config/api-config",
+    "pages/report-config/report-config",
+    "pages/report-list/report-list",
+    "pages/report-view/report-view"
+  ],
+  "window": {
+    "navigationBarTitleText": "掼蛋宝",
+    "navigationBarBackgroundColor": "#0f4c81",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f2efe8"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

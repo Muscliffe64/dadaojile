@@ -1,0 +1,19 @@
+.container { padding-bottom: 48rpx; }
+.card { background: #fff; border-radius: 20rpx; padding: 32rpx; margin: 28rpx; box-shadow: 0 4rpx 24rpx rgba(15,76,129,0.08); }
+.card-title { font-size: 32rpx; font-weight: 700; margin-bottom: 8rpx; }
+.table-hint, .rank-hint { font-size: 24rpx; color: #999; display: block; margin-bottom: 16rpx; }
+.rank-list { display: flex; flex-direction: column; gap: 4rpx; }
+.rank-item { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid #f0ede8; }
+.rank-item .rank-order.first { color: #d4af37; }
+.rank-item .rank-order.second { color: #c0c0c0; }
+.rank-item .rank-order.third { color: #cd7f32; }
+.rank-order { width: 80rpx; font-size: 28rpx; }
+.rank-item.rank-first { background: linear-gradient(90deg, rgba(255,193,7,0.15) 0%, transparent 100%); margin: 0 -32rpx; padding: 20rpx 32rpx; }
+.rank-item.rank-second { background: linear-gradient(90deg, rgba(192,192,192,0.2) 0%, transparent 100%); margin: 0 -32rpx; padding: 20rpx 32rpx; }
+.rank-item.rank-third { background: linear-gradient(90deg, rgba(205,127,50,0.15) 0%, transparent 100%); margin: 0 -32rpx; padding: 20rpx 32rpx; }
+.rank-main { flex: 1; }
+.rank-name { display: block; font-size: 30rpx; font-weight: 600; }
+.rank-meta { font-size: 24rpx; color: #999; }
+.rank-rate { font-size: 30rpx; font-weight: 700; color: #0f4c81; }
+.rank-note { font-size: 22rpx; color: #999; margin-left: 12rpx; }
+.empty-state { padding: 80rpx; text-align: center; color: #999; }

@@ -1,0 +1,21 @@
+<view class="container">
+  <view class="card" wx:if="{{ list.length > 0 }}">
+    <view class="card-title">🏆 按胜率排名</view>
+    <text class="table-hint" wx:if="{{ tableName }}">牌局：{{ tableName }}</text>
+    <text class="rank-hint" wx:if="{{ minGames > 0 }}">参与 {{ minGames }} 局以下仅供参考</text>
+    <view class="rank-list">
+      <view class="rank-item {{ item.rankClass ? 'rank-' + item.rankClass : '' }}" wx:for="{{ list }}" wx:key="name">
+        <view class="rank-order {{ item.rankClass }}"><text wx:if="{{ item.medal }}">{{ item.medal === 'gold' ? '🥇' : (item.medal === 'silver' ? '🥈' : '🥉') }}</text></view>
+        <view class="rank-main">
+          <text class="rank-name">{{ item.name }}</text>
+          <text class="rank-meta">{{ item.wins }}胜 / {{ item.appearances }}局</text>
+        </view>
+        <view class="rank-rate">{{ item.winRate }}%</view>
+        <text class="rank-note" wx:if="{{ item.lowSample }}">参与不足{{ minGames }}局</text>
+      </view>
+    </view>
+  </view>
+  <view class="empty-state" wx:else>
+    <text class="empty-text">暂无玩家数据</text>
+  </view>
+</view>
