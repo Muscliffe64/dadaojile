@@ -220,7 +220,7 @@
 .match-top {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   margin-bottom: 18rpx;
 }
 .match-date {
@@ -228,23 +228,26 @@
   color: #999;
 }
 .match-score {
-  font-size: 30rpx;
+  font-size: 26rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #fff;
+  background: #5fbc6f;
+  padding: 4rpx 18rpx;
+  border-radius: 999rpx;
 }
 .match-mid {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14rpx;
+  justify-content: center;
+  gap: 36rpx;  /* 1队和2队拉开 */
   margin-bottom: 16rpx;
 }
 .team-chip {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 12rpx;
   min-width: 0;
+  max-width: calc(50% - 60rpx);
 }
 .team-badge {
   width: 40rpx;
@@ -262,8 +265,8 @@
 .team-badge-2 { background: #c9a449; }
 .team-names {
   font-size: 28rpx;
-  color: #1a1a1a;
-  font-weight: 500;
+  color: #444;
+  font-weight: 400;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -287,8 +290,8 @@
   border-radius: 999rpx;
   color: #fff;
 }
-.winner-A { background: #5eb83a; }
-.winner-B { background: #5eb83a; }
+.winner-A { background: #0f4c81; }   /* 蓝色：与 1 队 badge 同色 */
+.winner-B { background: #c9a449; }   /* 金色：与 2 队 badge 同色 */
 
 .match-rounds-toggle {
   display: inline-flex;
