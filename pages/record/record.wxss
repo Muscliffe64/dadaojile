@@ -274,6 +274,68 @@
 .rank-btn.disabled {
   opacity: 0.5;
 }
+/* 双下时未点的 2 个 = 已确定的"败"，灰化但保留信息 */
+.rank-btn.tied {
+  opacity: 0.55;
+  background: #f0ede8;
+  border-color: #ddd;
+}
+
+/* === 最近搭配 chips === */
+.recent-pairings-item .label {
+  display: block;
+  margin-bottom: 12rpx;
+}
+.pairing-scroll {
+  white-space: nowrap;
+  width: 100%;
+}
+.pairing-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 14rpx 20rpx;
+  margin-right: 14rpx;
+  background: #fbfaf6;
+  border: 2rpx solid #e8e4dc;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: #333;
+}
+.pairing-chip:active {
+  background: #eef4fb;
+  border-color: #0f4c81;
+}
+.pairing-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+}
+.pairing-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 6rpx;
+  font-size: 18rpx;
+  font-weight: 700;
+  color: #fff;
+}
+.pairing-badge-1 { background: #0f4c81; }
+.pairing-badge-2 { background: #c9a449; }
+.pairing-vs {
+  font-size: 20rpx;
+  color: #999;
+  padding: 0 2rpx;
+}
+.rank-tag-tied {
+  font-size: 22rpx;
+  color: #888;
+  background: #e0dcd4;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+}
 .rank-team {
   font-size: 24rpx;
   color: #888;

@@ -68,15 +68,25 @@ function computeSlotOptions(teamA, teamB, players) {
   };
 }
 
+/** 检查头+二游是否同队（双下条件）：rankOrder 长度 === 2 且两个 slot 同队 */
+function isDoubleDownPair(rankOrder) {
+  if (!rankOrder || rankOrder.length !== 2) return false;
+  const a = rankOrder[0], b = rankOrder[1];
+  return (a <= 1 && b <= 1) || (a >= 2 && b >= 2);
+}
+
 function buildRankSlots(teamA, teamB, placeholders, rankOrder, gameOver) {
   const names = [teamA[0] || '', teamA[1] || '', teamB[0] || '', teamB[1] || ''];
   const allFilled = names.every(Boolean);
+  const doubleDown = isDoubleDownPair(rankOrder);
   const slots = [];
   for (let i = 0; i < 4; i++) {
     let rank = 0;
     const idx = rankOrder.indexOf(i);
     if (idx >= 0) rank = idx + 1;
     if (rank === 0 && rankOrder.length === 3 && !rankOrder.includes(i)) rank = 4;
+    // 双下时未点的 2 个槽标记为"已败"（视觉打灰 + "败"小标签）
+    const tied = rank === 0 && doubleDown;
     slots.push({
       key: 'slot-' + i,
       slot: i,
@@ -85,7 +95,8 @@ function buildRankSlots(teamA, teamB, placeholders, rankOrder, gameOver) {
       placeholder: placeholders[i] || (i + 1) + '号',
       disabled: !allFilled || gameOver,
       rank,
-      rankLabel: rank ? RANK_LABELS[rank - 1] : ''
+      rankLabel: rank ? RANK_LABELS[rank - 1] : (tied ? '败' : ''),
+      tied
     });
   }
   return slots;
@@ -182,6 +193,28 @@ function roundSummary(meta, names) {
 
 function buildRankPreview(teamA, teamB, rankOrder, gameState) {
   const names = [teamA[0] || '', teamA[1] || '', teamB[0] || '', teamB[1] || ''];
+  // 双下：头+二同队 → 不需要再点 3/4，直接出预览
+  if (isDoubleDownPair(rankOrder)) {
+    const remaining = [0, 1, 2, 3].filter((s) => !rankOrder.includes(s));
+    const r = applyRound(gameState, rankOrder[0], rankOrder[1], remaining[0]);
+    const winLabel = r.winSide === 'A' ? '1队' : '2队';
+    const headName = names[rankOrder[0]] || '?';
+    const partnerName = names[rankOrder[1]] || '?';
+    let action;
+    if (r.passed) {
+      const curIdx = r.winSide === 'A' ? gameState.levelAIdx : gameState.levelBIdx;
+      action = `🎉 ${winLabel} 在 ${LEVELS[curIdx]} 双下过A，掼蛋成功`;
+    } else {
+      const fromIdx = r.winSide === 'A' ? gameState.levelAIdx : gameState.levelBIdx;
+      const toIdx = r.next[r.winSide === 'A' ? 'levelAIdx' : 'levelBIdx'];
+      action = `${winLabel}（${headName}+${partnerName}）双下升 3 级：${LEVELS[fromIdx]} → ${LEVELS[toIdx]}`;
+    }
+    return {
+      line1: `🎯 头游 ${headName} · 二游 ${partnerName}（同队即双下）`,
+      line2: action,
+      canCommit: true
+    };
+  }
   if (rankOrder.length < 3) return null;
   const r = applyRound(gameState, rankOrder[0], rankOrder[1], rankOrder[2]);
   const lastSlot = r.lastSlot;
@@ -210,6 +243,36 @@ function buildRankPreview(teamA, teamB, rankOrder, gameState) {
 
 function initialGameState() {
   return { levelAIdx: START_IDX, levelBIdx: START_IDX, taoquanA: false, taoquanB: false };
+}
+
+/**
+ * 从历史记录中提取最近 N 个去重的 4 人搭配（按"4 人集合"去重，保留最新一次的 teamA/teamB 分配）
+ */
+function extractRecentPairings(records, n) {
+  const seen = new Set();
+  const out = [];
+  for (const r of records || []) {
+    const a1 = r.teamA && r.teamA[0];
+    const a2 = r.teamA && r.teamA[1];
+    const b1 = r.teamB && r.teamB[0];
+    const b2 = r.teamB && r.teamB[1];
+    if (!a1 || !a2 || !b1 || !b2) continue;
+    // 用 4 人集合 + 队伍划分作为 key（这样同 4 人不同搭配会被视为不同记录）
+    const teamAKey = [a1, a2].slice().sort().join('+');
+    const teamBKey = [b1, b2].slice().sort().join('+');
+    const key = [teamAKey, teamBKey].sort().join(' vs ');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      key,
+      teamA: [a1, a2],
+      teamB: [b1, b2],
+      labelA: `${a1}+${a2}`,
+      labelB: `${b1}+${b2}`
+    });
+    if (out.length >= n) break;
+  }
+  return out;
 }
 
 Page({
@@ -244,7 +307,10 @@ Page({
     rankPreview: null,
     gameOver: false,
     gameOverSide: '',    // 'A' or 'B'
-    historyExpanded: true
+    historyExpanded: true,
+    // 历史搭配（自动从最近 records 提取）
+    recentPairings: [],
+    showRecentPairings: true   // 开关，跟随用户偏好持久化
   },
 
   onLoad() {
@@ -255,10 +321,17 @@ Page({
       writtenAtPreview: timeStr(),
       pairingMode: mode,
       pairingIndex: idx,
-      placeholders: findPairing(mode).placeholders
+      placeholders: findPairing(mode).placeholders,
+      showRecentPairings: storage.getShowRecentPairings()
     });
     this.loadPlayers();
     this._restoreDraft();
+  },
+
+  onRecentPairingsToggle() {
+    const next = !this.data.showRecentPairings;
+    storage.setShowRecentPairings(next);
+    this.setData({ showRecentPairings: next });
   },
 
   onShow() {
@@ -394,13 +467,54 @@ Page({
     const players = storage.getPlayers();
     const { teamA, teamB } = this.data;
     const opts = computeSlotOptions(teamA || ['', ''], teamB || ['', ''], players || []);
+    // 从当前牌局的最近对局里提取去重的 4 人搭配，作为快速填充候选
+    const tableId = storage.getCurrentTableId();
+    const allRecords = storage.getRecords(tableId) || [];
+    // 按 createdAt / date 倒序，最新的优先
+    const sortedRecords = allRecords.slice().sort((a, b) => {
+      const da = (a.date || '') + ' ' + (a.writtenAt || '');
+      const db = (b.date || '') + ' ' + (b.writtenAt || '');
+      if (da !== db) return db.localeCompare(da);
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    const recentPairings = extractRecentPairings(sortedRecords, 5);
     this.setData({
       players,
       options0: opts.options0,
       options1: opts.options1,
       options2: opts.options2,
-      options3: opts.options3
+      options3: opts.options3,
+      recentPairings
     });
+  },
+
+  /** 一键填充：把选中的搭配套到 teamA/teamB */
+  onPairingPickerTap(e) {
+    const { rankEnabled, rounds } = this.data;
+    if (rankEnabled && rounds.length > 0) {
+      wx.showToast({ title: '本局进行中，先重置或完成再换搭配', icon: 'none' });
+      return;
+    }
+    const idx = parseInt(e.currentTarget.dataset.idx, 10);
+    const pairing = (this.data.recentPairings || [])[idx];
+    if (!pairing) return;
+    const teamA = [pairing.teamA[0], pairing.teamA[1]];
+    const teamB = [pairing.teamB[0], pairing.teamB[1]];
+    const { players, placeholders, gameOver } = this.data;
+    const opts = computeSlotOptions(teamA, teamB, players || []);
+    this.setData({
+      teamA,
+      teamB,
+      options0: opts.options0,
+      options1: opts.options1,
+      options2: opts.options2,
+      options3: opts.options3,
+      rankOrder: rankEnabled ? [] : this.data.rankOrder,
+      rankSlots: rankEnabled ? buildRankSlots(teamA, teamB, placeholders, [], gameOver) : [],
+      rankPreview: null
+    });
+    wx.showToast({ title: '已套用 · ' + pairing.labelA + ' vs ' + pairing.labelB, icon: 'none', duration: 1500 });
+    this._saveDraft();
   },
 
   onDateChange(e) {
@@ -571,7 +685,13 @@ Page({
 
   // === 确认本手 ===
   onRoundCommit() {
-    const { rankOrder, gameState, teamA, teamB, placeholders, rounds } = this.data;
+    let { rankOrder } = this.data;
+    const { gameState, teamA, teamB, placeholders, rounds } = this.data;
+    // 双下：只点了 2 个且同队 → 自动把剩下 2 个补到 3/4 位（具体顺序对升级规则无影响）
+    if (isDoubleDownPair(rankOrder)) {
+      const remaining = [0, 1, 2, 3].filter((s) => !rankOrder.includes(s));
+      rankOrder = [...rankOrder, remaining[0]];
+    }
     if (rankOrder.length !== 3) {
       wx.showToast({ title: '请先点完 3 个人', icon: 'none' });
       return;

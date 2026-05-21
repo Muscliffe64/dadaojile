@@ -22,6 +22,32 @@
       <text class="hint">按抽签号决定占位提示，不影响已保存记录</text>
     </view>
 
+    <view class="form-item recent-pairings-item" wx:if="{{ recentPairings.length > 0 }}">
+      <view class="label-row">
+        <text class="label">📋 最近搭配</text>
+        <view class="rank-toggle {{ showRecentPairings ? 'on' : '' }}" bindtap="onRecentPairingsToggle">
+          <view class="rank-toggle-dot"></view>
+        </view>
+      </view>
+      <block wx:if="{{ showRecentPairings }}">
+        <text class="hint" style="margin-top:0;margin-bottom:14rpx;">点一下一键填好 4 人，省得每次重选</text>
+        <scroll-view scroll-x class="pairing-scroll" enhanced show-scrollbar="{{ false }}">
+          <view
+            class="pairing-chip"
+            wx:for="{{ recentPairings }}"
+            wx:key="key"
+            wx:for-index="ri"
+            data-idx="{{ ri }}"
+            bindtap="onPairingPickerTap"
+          >
+            <text class="pairing-side"><text class="pairing-badge pairing-badge-1">1</text>{{ item.labelA }}</text>
+            <text class="pairing-vs">vs</text>
+            <text class="pairing-side"><text class="pairing-badge pairing-badge-2">2</text>{{ item.labelB }}</text>
+          </view>
+        </scroll-view>
+      </block>
+    </view>
+
     <view class="form-item">
       <text class="label">1️⃣ 1队（2人）</text>
       <view class="team-row">
@@ -86,10 +112,10 @@
 
         <!-- 排名按钮 -->
         <block wx:if="{{ !gameOver }}">
-          <text class="hint rank-hint">按顺序点击 4 个人：第 1 个=头游，第 2 个=二游，第 3 个=三游，剩下那位自动是末游。</text>
+          <text class="hint rank-hint">按顺序点击：第 1 个=头游，第 2 个=二游。若两人同队即"双下"，可直接确认；否则继续点第 3 个=三游，剩下那位自动是末游。</text>
           <view class="rank-grid">
             <view
-              class="rank-btn {{ item.rank ? 'picked picked-' + item.rank : '' }} {{ item.disabled ? 'disabled' : '' }}"
+              class="rank-btn {{ item.rank ? 'picked picked-' + item.rank : '' }} {{ item.tied ? 'tied' : '' }} {{ item.disabled ? 'disabled' : '' }}"
               wx:for="{{ rankSlots }}"
               wx:key="key"
               data-slot="{{ item.slot }}"
@@ -98,6 +124,7 @@
               <text class="rank-team">{{ item.teamLabel }}</text>
               <text class="rank-name">{{ item.name || item.placeholder }}</text>
               <text class="rank-tag" wx:if="{{ item.rank }}">{{ item.rankLabel }}</text>
+              <text class="rank-tag rank-tag-tied" wx:elif="{{ item.tied }}">{{ item.rankLabel }}</text>
               <text class="rank-tag rank-tag-empty" wx:else>点我标记</text>
             </view>
           </view>

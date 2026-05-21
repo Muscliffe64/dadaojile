@@ -15,6 +15,7 @@ const PAIRING_MODE_KEY = 'guandan_pairing_mode';
 const DEFAULT_PAIRING_MODE = '12-34';
 const PAIRING_MODES = ['12-34', '13-24', '14-23'];
 const RECORD_DRAFT_KEY = 'guandan_record_draft';
+const SHOW_RECENT_PAIRINGS_KEY = 'guandan_show_recent_pairings';
 
 function getRecords(tableId) {
   try {
@@ -41,6 +42,7 @@ function clearAllData() {
   wx.removeStorageSync(DEEPSEEK_API_KEY_KEY);
   wx.removeStorageSync(MIN_GAMES_PER_TABLE_KEY);
   wx.removeStorageSync(RECORD_DRAFT_KEY);
+  wx.removeStorageSync(SHOW_RECENT_PAIRINGS_KEY);
 }
 
 function normalizeRanks(ranks) {
@@ -435,6 +437,25 @@ function clearRecordDraft() {
   try { wx.removeStorageSync(RECORD_DRAFT_KEY); } catch (e) {}
 }
 
+/**
+ * 记录页"最近搭配"显示开关：默认 true（开启），用户关闭后持久化
+ */
+function getShowRecentPairings() {
+  try {
+    const v = wx.getStorageSync(SHOW_RECENT_PAIRINGS_KEY);
+    if (v === false || v === 'false' || v === 0 || v === '0') return false;
+    return true; // 默认开启
+  } catch (e) {
+    return true;
+  }
+}
+
+function setShowRecentPairings(enabled) {
+  try {
+    wx.setStorageSync(SHOW_RECENT_PAIRINGS_KEY, !!enabled);
+  } catch (e) { /* 静默 */ }
+}
+
 function getPairingMode() {
   try {
     const v = wx.getStorageSync(PAIRING_MODE_KEY);
@@ -693,7 +714,9 @@ module.exports = {
   PAIRING_MODES,
   getRecordDraft,
   setRecordDraft,
-  clearRecordDraft
+  clearRecordDraft,
+  getShowRecentPairings,
+  setShowRecentPairings
 };
 
 // 兼容旧调用：MIN_GAMES_FOR_RANK 现在是属性 getter，读最新设置
