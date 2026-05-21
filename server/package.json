@@ -1,7 +1,7 @@
 {
   "name": "guandan-ai-report-api",
   "version": "1.0.0",
-  "description": "掼蛋宝 AI 比赛分析报告 API（已暂停外部模型调用）",
+  "description": "打到几了 AI 比赛分析报告 API（已暂停外部模型调用）",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

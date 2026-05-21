@@ -35,9 +35,9 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '掼蛋宝 - AI 比赛分析', path: '/pages/report-list/report-list' };
+    return { title: '打到几了 - AI 比赛分析', path: '/pages/report-list/report-list' };
   },
   onShareTimeline() {
-    return { title: '掼蛋宝 - AI 比赛分析' };
+    return { title: '打到几了 - AI 比赛分析' };
   }
 });

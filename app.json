@@ -13,7 +13,7 @@
     "pages/report-view/report-view"
   ],
   "window": {
-    "navigationBarTitleText": "掼蛋宝",
+    "navigationBarTitleText": "打到几了",
     "navigationBarBackgroundColor": "#0f4c81",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#f2efe8"

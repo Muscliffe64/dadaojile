@@ -1,4 +1,4 @@
-// 掼蛋宝 - 存储与统计工具
+// 打到几了 - 存储与统计工具
 const RECORDS_KEY = 'guandan_records';
 const PLAYERS_KEY = 'guandan_players';
 const TABLES_KEY = 'guandan_tables';

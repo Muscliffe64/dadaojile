@@ -1,5 +1,5 @@
 /**
- * 掼蛋宝 AI 报告 API
+ * 打到几了 AI 报告 API
  * AI 报告功能已暂停，当前服务不会连接 DeepSeek API。
  */
 require('dotenv').config();

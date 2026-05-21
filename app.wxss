@@ -1,4 +1,4 @@
-/* 掼蛋宝 - 全局样式 */
+/* 打到几了 - 全局样式 */
 page {
   background: linear-gradient(180deg, #f2efe8 0%, #e8e4dc 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;

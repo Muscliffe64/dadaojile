@@ -180,14 +180,14 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: '掼蛋宝 - 对局统计 · 胜率排行',
+      title: '打到几了 - 对局统计 · 胜率排行',
       path: '/pages/index/index'
     };
   },
 
   onShareTimeline() {
     return {
-      title: '掼蛋宝 - 对局统计 · 胜率排行'
+      title: '打到几了 - 对局统计 · 胜率排行'
     };
   }
 });

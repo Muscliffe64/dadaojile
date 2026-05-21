@@ -51,14 +51,14 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: '掼蛋比赛 AI 分析报告 - 掼蛋宝',
+      title: '掼蛋比赛 AI 分析报告 - 打到几了',
       path: '/pages/report-list/report-list?from=share'
     };
   },
 
   onShareTimeline() {
     return {
-      title: '掼蛋比赛 AI 分析报告 - 掼蛋宝',
+      title: '掼蛋比赛 AI 分析报告 - 打到几了',
       query: 'from=timeline'
     };
   }

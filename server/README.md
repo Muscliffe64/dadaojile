@@ -1,4 +1,4 @@
-# 掼蛋宝 AI 报告 API
+# 打到几了 AI 报告 API
 
 AI 报告功能已暂停。当前服务保留健康检查和 `/analyze` 占位接口，但不会连接 DeepSeek API，也不需要配置 API Key。
 
