@@ -202,6 +202,44 @@ async function getMyProfile() {
   }
 }
 
+/**
+ * 把一组 cloud:// 文件 ID 批量转成 https:// 临时 URL（2 小时有效）。
+ * <image src="cloud://..."> 在某些场景渲染不稳定（特别是云存储权限收紧时），
+ * 转成 https:// 是最稳的兜底。
+ *
+ * 入参：fileID 字符串数组
+ * 返回：{ [fileID]: tempUrl, ... } 映射；转换失败的不出现在 map 里
+ */
+async function resolveCloudFiles(fileIDs) {
+  if (!Array.isArray(fileIDs) || fileIDs.length === 0) return {};
+  const list = Array.from(new Set(fileIDs)).filter(
+    (id) => typeof id === 'string' && id.indexOf('cloud://') === 0
+  );
+  if (list.length === 0) return {};
+  try {
+    const res = await wx.cloud.getTempFileURL({ fileList: list });
+    const map = {};
+    for (const item of (res.fileList || [])) {
+      if (item.status === 0 && item.tempFileURL) {
+        map[item.fileID] = item.tempFileURL;
+      }
+    }
+    return map;
+  } catch (e) {
+    console.warn('[cloud.resolveCloudFiles]', e);
+    return {};
+  }
+}
+
+/** 单个 cloud:// URL 转 https://；不是 cloud:// 的原样返回 */
+async function resolveOneCloudFile(fileID) {
+  if (!fileID || typeof fileID !== 'string' || fileID.indexOf('cloud://') !== 0) {
+    return fileID || '';
+  }
+  const map = await resolveCloudFiles([fileID]);
+  return map[fileID] || fileID;
+}
+
 /** 生成 6 位随机邀请码（大写字母+数字，去掉容易混的 0 O 1 I） */
 function genInviteCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -349,7 +387,7 @@ async function getTableMembers(tableId) {
         console.warn('[cloud.getTableMembers] read users failed:', e2);
       }
     }
-    return members.map((m) => {
+    const intermediate = members.map((m) => {
       const u = userMap[m.openid] || {};
       return {
         openid: m.openid,
@@ -359,6 +397,13 @@ async function getTableMembers(tableId) {
         joinedAt: m.joinedAt
       };
     });
+    // 把 avatar 里的 cloud:// 批量转 https:// 临时链接
+    const fileIDs = intermediate.map((x) => x.avatar).filter(Boolean);
+    const urlMap = await resolveCloudFiles(fileIDs);
+    return intermediate.map((x) => ({
+      ...x,
+      avatar: urlMap[x.avatar] || x.avatar
+    }));
   } catch (e) {
     console.error('[cloud.getTableMembers]', e);
     return [];
@@ -550,5 +595,7 @@ module.exports = {
   joinTableByCode,
   addCloudRecord,
   getCloudRecords,
-  deleteCloudRecord
+  deleteCloudRecord,
+  resolveCloudFiles,
+  resolveOneCloudFile
 };

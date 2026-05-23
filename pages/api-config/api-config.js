@@ -57,12 +57,15 @@ Page({
       const r = await cloud.ensureUser();
       profile = (r && r.profile) || {};
     }
+    // 头像可能是 cloud://，转成 https:// 临时 URL 才能稳定渲染
+    let avatar = profile.avatar || '';
+    if (avatar) avatar = await cloud.resolveOneCloudFile(avatar);
     this.setData({
       myOpenid: openid,
       openidMasked: openid.slice(0, 4) + '****' + openid.slice(-4),
       myName: profile.name || openid.slice(-6),
       myNameEditing: profile.name || '',
-      myAvatar: profile.avatar || ''
+      myAvatar: avatar
     });
   },
 
@@ -85,7 +88,9 @@ Page({
       // 保存 cloud:// URL 到 profile（saveProfile 会同步到 table_members）
       const r = await cloud.saveProfile({ avatar: fileID });
       if (r.ok) {
-        this.setData({ myAvatar: fileID, saveStatus: '✅ 头像已上传到云，所有成员都能看到了' });
+        // 立刻转成 https:// 临时链接显示，否则 <image> 渲染 cloud:// 有时不稳定
+        const httpsUrl = await cloud.resolveOneCloudFile(fileID);
+        this.setData({ myAvatar: httpsUrl, saveStatus: '✅ 头像已上传到云，所有成员都能看到了' });
         wx.showToast({ title: '头像已更新', icon: 'success' });
       } else {
         const msg = '保存失败：' + (r.error || '未知错误');
