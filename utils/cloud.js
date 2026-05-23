@@ -155,7 +155,9 @@ async function ensureUser() {
 
 /**
  * 更新当前用户的昵称/头像
- * 先保证 users 记录存在（防止 update 在没记录时直接报错）。
+ * 先保证 users 记录存在，再 update。
+ * 同时把新的 name/avatar 同步到自己所有 table_members 记录里的 displayName/avatar，
+ * 这样别的成员看你时也能看到最新名字（之前 displayName 是加入时的快照）
  */
 async function saveProfile({ name, avatar }) {
   const openid = await getOpenid();
@@ -165,9 +167,22 @@ async function saveProfile({ name, avatar }) {
   if (typeof avatar === 'string') data.avatar = avatar;
   if (Object.keys(data).length === 0) return { ok: true };
   try {
-    // 保险：先确保记录存在
     await ensureUser();
     await db().collection('users').doc(openid).update({ data });
+    // 同步到自己所有 table_members（permissions OK，自己是创建者）
+    try {
+      const myMembersRes = await db().collection('table_members').where({ openid }).get();
+      const mUpdate = {};
+      if ('name' in data) mUpdate.displayName = data.name;
+      if ('avatar' in data) mUpdate.avatar = data.avatar;
+      if (Object.keys(mUpdate).length > 0) {
+        await Promise.all((myMembersRes.data || []).map((m) =>
+          db().collection('table_members').doc(m._id).update({ data: mUpdate }).catch(() => {})
+        ));
+      }
+    } catch (e2) {
+      console.warn('[cloud.saveProfile] sync table_members failed:', e2);
+    }
     return { ok: true };
   } catch (e) {
     console.error('[cloud.saveProfile]', e);
@@ -411,6 +426,93 @@ async function joinTableByCode(inviteCode) {
   }
 }
 
+/**
+ * 在云端添加一条对局记录（仅当当前牌局是云牌局时调用）。
+ * record 字段跟本地版本一致：date, teamA, teamB, winner, score, ranks?, rounds?
+ * 自动补：tableId, _openid（创建者）, recorderName（录入时的 displayName）, createdAt, writtenAt
+ *
+ * 返回 { ok, _id?, error? }
+ */
+async function addCloudRecord(tableId, record) {
+  if (!tableId) return { ok: false, error: '缺少 tableId' };
+  const openid = await getOpenid();
+  if (!openid) return { ok: false, error: '未拿到 openid' };
+  const myProfile = (await getMyProfile()) || {};
+  const now = new Date();
+  const writtenAt = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  try {
+    const payload = {
+      tableId,
+      date: record.date,
+      writtenAt: record.writtenAt || writtenAt,
+      teamA: record.teamA || [],
+      teamB: record.teamB || [],
+      winner: record.winner,
+      score: record.score || '',
+      recorderName: myProfile.name || openid.slice(-6),
+      createdAt: db().serverDate()
+    };
+    if (record.ranks) payload.ranks = record.ranks;
+    if (record.rounds) payload.rounds = record.rounds;
+    const res = await db().collection('records').add({ data: payload });
+    return { ok: true, _id: res._id };
+  } catch (e) {
+    console.error('[cloud.addCloudRecord]', e);
+    return { ok: false, error: e && (e.errMsg || e.message || String(e)) };
+  }
+}
+
+/**
+ * 拉取某个云牌局的对局记录（按日期倒序，默认最多 100 条）。
+ * 因为 records 集合权限是"登录用户可读"，能拿到所有成员录的对局。
+ * 返回数组（与本地 record 结构一致 + 多了 _id / _openid / recorderName）
+ */
+async function getCloudRecords(tableId, limit) {
+  if (!tableId) return [];
+  const max = Math.min(limit || 100, 100);
+  try {
+    const res = await db().collection('records')
+      .where({ tableId })
+      .orderBy('date', 'desc')
+      .orderBy('createdAt', 'desc')
+      .limit(max)
+      .get();
+    return (res.data || []).map((r) => ({
+      id: r._id,
+      _id: r._id,
+      _openid: r._openid,
+      tableId: r.tableId,
+      date: r.date,
+      writtenAt: r.writtenAt,
+      teamA: r.teamA || [],
+      teamB: r.teamB || [],
+      winner: r.winner,
+      score: r.score,
+      ranks: r.ranks,
+      rounds: r.rounds,
+      recorderName: r.recorderName,
+      createdAt: r.createdAt
+    }));
+  } catch (e) {
+    console.error('[cloud.getCloudRecords]', e);
+    return [];
+  }
+}
+
+/**
+ * 删除一条云对局记录（仅录入者本人可删，由 records 集合的"创建者可写"权限保证）
+ */
+async function deleteCloudRecord(recordId) {
+  if (!recordId) return { ok: false, error: '缺少 id' };
+  try {
+    await db().collection('records').doc(recordId).remove();
+    return { ok: true };
+  } catch (e) {
+    console.error('[cloud.deleteCloudRecord]', e);
+    return { ok: false, error: e && (e.errMsg || e.message || String(e)) };
+  }
+}
+
 module.exports = {
   ENV_ID,
   isReady,
@@ -424,5 +526,8 @@ module.exports = {
   listMyTables,
   getTableMembers,
   deleteTable,
-  joinTableByCode
+  joinTableByCode,
+  addCloudRecord,
+  getCloudRecords,
+  deleteCloudRecord
 };

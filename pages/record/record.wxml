@@ -3,7 +3,7 @@
     <text class="cw-icon">☁️</text>
     <view class="cw-body">
       <text class="cw-title">当前是云牌局</text>
-      <text class="cw-text">对局上云功能下个版本上线。现在录的对局只会留在本地，朋友看不到。如要让队友能看，请回首页切到本地牌局再录。</text>
+      <text class="cw-text">点保存后会上传到云端，所有成员都能看到。</text>
     </view>
   </view>
 

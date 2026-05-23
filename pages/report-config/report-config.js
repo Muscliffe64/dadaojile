@@ -1,5 +1,6 @@
 // 生成报告配置：选择牌局、报告侧重、自定义说明
 const storage = require('../../utils/storage');
+const cloud = require('../../utils/cloud');
 const aiReport = require('../../utils/aiReport');
 
 const FOCUS_OPTIONS = [
@@ -50,12 +51,38 @@ Page({
     this.load();
   },
 
-  load() {
-    const tables = storage.getTables();
-    const allRecords = storage.getRecords();
+  async load() {
+    // 本地牌局
+    const localTables = storage.getTables();
+    const allLocalRecords = storage.getRecords();
+    // 云牌局
+    const cloudTables = cloud.isReady() ? (await cloud.listMyTables()) : [];
+    // 合并：每个 table 带 isCloud / displayName / id 字段
+    const tables = [
+      ...localTables.map((t) => ({
+        id: t.id,
+        name: t.name,
+        isCloud: false
+      })),
+      ...cloudTables.map((t) => ({
+        id: t._id,
+        name: '☁️ ' + t.name,
+        isCloud: true
+      }))
+    ];
+    // 各牌局对局数：本地用过滤算，云的逐个调 count
     const counts = {};
     for (const t of tables) {
-      counts[t.id] = (allRecords || []).filter((r) => (r.tableId || storage.DEFAULT_TABLE_ID) === t.id).length;
+      if (t.isCloud) {
+        try {
+          const c = await cloud.db().collection('records').where({ tableId: t.id }).count();
+          counts[t.id] = c.total || 0;
+        } catch (e) {
+          counts[t.id] = 0;
+        }
+      } else {
+        counts[t.id] = (allLocalRecords || []).filter((r) => (r.tableId || storage.DEFAULT_TABLE_ID) === t.id).length;
+      }
     }
     const currentId = storage.getCurrentTableId();
     const selectedIds = tables.some((t) => t.id === currentId) ? [currentId] : (tables[0] ? [tables[0].id] : []);
@@ -111,18 +138,9 @@ Page({
   },
 
   validate() {
-    const { selectedIds, tables } = this.data;
+    const { selectedIds } = this.data;
     if (!selectedIds || selectedIds.length === 0) {
       wx.showToast({ title: '请至少选择 1 个牌局', icon: 'none' });
-      return false;
-    }
-    const allRecords = storage.getRecords();
-    let total = 0;
-    for (const id of selectedIds) {
-      total += (allRecords || []).filter((r) => (r.tableId || storage.DEFAULT_TABLE_ID) === id).length;
-    }
-    if (total === 0) {
-      wx.showToast({ title: '所选牌局暂无对局数据', icon: 'none' });
       return false;
     }
     if (!aiReport.getDeepSeekApiKey()) {
@@ -132,19 +150,37 @@ Page({
     return true;
   },
 
-  submit() {
+  async submit() {
     if (!this.validate() || this.data.loading) return;
-    const { selectedIds, selectedFocus, customInput } = this.data;
+    const { selectedIds, selectedFocus, customInput, tables } = this.data;
     const focus = (selectedFocus && selectedFocus.length > 0) ? selectedFocus : ['full'];
-    const allRecords = storage.getRecords();
+    // 根据每个选中牌局是云/本地，分别拉 records 再合并
+    this.setData({ loading: true });
+    wx.showLoading({ title: '准备数据...', mask: true });
+    const tableMap = {};
+    for (const t of tables) tableMap[t.id] = t;
+    const allLocalRecords = storage.getRecords();
     const records = [];
     for (const id of selectedIds) {
-      const list = (allRecords || []).filter((r) => (r.tableId || storage.DEFAULT_TABLE_ID) === id);
-      records.push(...list);
+      const t = tableMap[id];
+      if (!t) continue;
+      if (t.isCloud) {
+        const cloudRecs = await cloud.getCloudRecords(id, 500);
+        records.push(...cloudRecs);
+      } else {
+        const localRecs = (allLocalRecords || []).filter((r) => (r.tableId || storage.DEFAULT_TABLE_ID) === id);
+        records.push(...localRecs);
+      }
+    }
+    if (records.length === 0) {
+      wx.hideLoading();
+      this.setData({ loading: false });
+      wx.showToast({ title: '所选牌局暂无对局数据', icon: 'none' });
+      return;
     }
     records.sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.createdAt || 0) - (b.createdAt || 0));
 
-    this.setData({ loading: true });
+    // 切换 loading 文案
     wx.showLoading({ title: '生成中…', mask: true });
     aiReport
       .requestReport({ records, focus, customInput })

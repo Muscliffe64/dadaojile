@@ -12,11 +12,6 @@
       <view class="table-manage" bindtap="goTables">管理</view>
     </view>
 
-    <view class="cloud-table-banner" wx:if="{{ currentTableIsCloud }}">
-      <text class="ctb-icon">☁️</text>
-      <text class="ctb-text">这是云牌局。"对局上云"功能正在做（下个版本），暂时还看不到对局数据；多人共享框架已就绪。</text>
-    </view>
-
     <view class="stats-row">
       <view class="stat-block stat-blue">
         <text class="stat-num">{{ total }}</text>

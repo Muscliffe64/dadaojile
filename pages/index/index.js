@@ -95,8 +95,13 @@ Page({
     }
     const currentTableIndex = Math.max(0, tables.findIndex((t) => t.id === (cur && cur.id)));
     const currentIsCloud = !!(cur && cur.isCloud);
-    // 云牌局的对局还没接进来（下个版本做），本地表才有真实数据
-    const records = currentIsCloud ? [] : storage.getRecords(cur && cur.id);
+    // 云表 → 从云拉对局；本地表 → 从本地 storage 拉
+    let records;
+    if (currentIsCloud) {
+      records = await cloud.getCloudRecords(cur.id, 100);
+    } else {
+      records = storage.getRecords(cur && cur.id);
+    }
     const { total, weekTotal, leaderboard, records: list } = storage.getStats(records, cur && cur.id);
     // 截到"竞赛名次 <= 3"，并列同名次全包含；下一个名次跳到 positionInList。
     // 例：1/2/2/4 → 显示 A,B,C（D 是第 4 名，跳过）

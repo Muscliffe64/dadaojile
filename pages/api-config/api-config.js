@@ -51,7 +51,12 @@ Page({
     if (!cloud.isReady()) return;
     const openid = await cloud.getOpenid();
     if (!openid) return;
-    const profile = (await cloud.getMyProfile()) || {};
+    let profile = await cloud.getMyProfile();
+    if (!profile) {
+      // 跟 onLaunch 的 ensureUser 竞态，没拿到时主动跑一次保证记录存在
+      const r = await cloud.ensureUser();
+      profile = (r && r.profile) || {};
+    }
     this.setData({
       myOpenid: openid,
       openidMasked: openid.slice(0, 4) + '****' + openid.slice(-4),
@@ -61,21 +66,38 @@ Page({
     });
   },
 
-  onChooseAvatar(e) {
-    const url = e.detail && e.detail.avatarUrl;
-    if (!url) return;
-    this.setData({ myAvatar: url, saveStatus: '正在保存头像...' });
-    cloud.saveProfile({ avatar: url }).then((r) => {
+  async onChooseAvatar(e) {
+    const localUrl = e.detail && e.detail.avatarUrl;
+    if (!localUrl) return;
+    // 先即时显示本地选中的（瞬时反馈），上传完再换成云 URL
+    this.setData({ myAvatar: localUrl, saveStatus: '正在上传头像到云...' });
+    try {
+      const openid = await cloud.getOpenid();
+      if (!openid) {
+        this.setData({ saveStatus: '❌ 未拿到 openid，无法上传' });
+        return;
+      }
+      // 上传到云存储 avatars/openid_时间戳.jpg；时间戳避免命名缓存
+      const cloudPath = `avatars/${openid}_${Date.now()}.jpg`;
+      const uploadRes = await wx.cloud.uploadFile({ cloudPath, filePath: localUrl });
+      const fileID = uploadRes && uploadRes.fileID;
+      if (!fileID) throw new Error('上传无返回 fileID');
+      // 保存 cloud:// URL 到 profile（saveProfile 会同步到 table_members）
+      const r = await cloud.saveProfile({ avatar: fileID });
       if (r.ok) {
-        this.setData({ saveStatus: '✅ 头像已保存到云' });
+        this.setData({ myAvatar: fileID, saveStatus: '✅ 头像已上传到云，所有成员都能看到了' });
         wx.showToast({ title: '头像已更新', icon: 'success' });
       } else {
         const msg = '保存失败：' + (r.error || '未知错误');
-        console.error('[api-config.onChooseAvatar]', r.error);
+        console.error('[onChooseAvatar saveProfile]', r.error);
         this.setData({ saveStatus: '❌ ' + msg });
-        wx.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 3000 });
       }
-    });
+    } catch (err) {
+      console.error('[onChooseAvatar upload]', err);
+      const msg = '上传失败：' + (err && (err.errMsg || err.message) || '未知');
+      this.setData({ saveStatus: '❌ ' + msg });
+      wx.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 3000 });
+    }
   },
 
   onNameInput(e) {

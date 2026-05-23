@@ -10,7 +10,8 @@
 .item-teams { display: flex; align-items: center; gap: 12rpx; margin-bottom: 8rpx; }
 .team-cell { display: flex; align-items: center; gap: 8rpx; font-size: 26rpx; }
 .vs { font-size: 22rpx; color: #999; }
-.item-winner { font-size: 24rpx; color: #0f4c81; }
+.item-winner { font-size: 24rpx; color: #0f4c81; display: flex; gap: 8rpx; align-items: baseline; }
+.recorder-tag { font-size: 22rpx; color: #999; }
 .btn-delete { font-size: 26rpx; color: #c0392b; padding: 8rpx 16rpx; flex-shrink: 0; }
 .empty-state { padding: 80rpx; text-align: center; color: #999; }
 .item-main { flex: 1; min-width: 0; }

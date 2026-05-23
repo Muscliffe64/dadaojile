@@ -1,6 +1,8 @@
 // 记录本局：日期、1队2人、2队2人、胜负、比分（级数 2-A 双选 + 套圈）
 // 启用"过程记录"后改为多手追踪模式：每手点 3 个排名 -> 自动算升级 -> 过A自动判定胜负
+// 当前牌局是云牌局时，对局会写入云端 records 集合，所有成员共享。
 const storage = require('../../utils/storage');
+const cloud = require('../../utils/cloud');
 
 const LEVELS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A1', 'A2', 'A3'];
 const A1_IDX = 12;
@@ -829,9 +831,9 @@ Page({
     return true;
   },
 
-  submit() {
+  async submit() {
     if (!this.validate()) return;
-    const { date, teamA, teamB, winner, levelA, levelB, taoquanA, taoquanB, rankEnabled, rounds } = this.data;
+    const { date, teamA, teamB, winner, levelA, levelB, taoquanA, taoquanB, rankEnabled, rounds, currentTableIsCloud } = this.data;
     const score = buildScore(levelA, levelB, taoquanA, taoquanB);
 
     let ranks = null;
@@ -858,7 +860,8 @@ Page({
         taoquanTrigger: !!m.taoquanTrigger
       }));
     }
-    storage.addRecord({
+
+    const payload = {
       date,
       teamA: teamA.filter(Boolean),
       teamB: teamB.filter(Boolean),
@@ -866,11 +869,32 @@ Page({
       score,
       ranks,
       rounds: serializedRounds
-    });
-    // 提交成功，把草稿清掉，避免下次进来又"恢复"出这条已保存的记录
-    storage.clearRecordDraft();
-    wx.showToast({ title: '保存成功', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 800);
+    };
+
+    if (currentTableIsCloud) {
+      // 云牌局：写入云端 records 集合
+      const tableId = storage.getCurrentTableId();
+      wx.showLoading({ title: '上传中...', mask: true });
+      const r = await cloud.addCloudRecord(tableId, payload);
+      wx.hideLoading();
+      if (!r.ok) {
+        wx.showModal({
+          title: '保存失败',
+          content: '云端写入出错：' + (r.error || '未知'),
+          showCancel: false
+        });
+        return;
+      }
+      storage.clearRecordDraft();
+      wx.showToast({ title: '已上传到云', icon: 'success' });
+      setTimeout(() => wx.navigateBack(), 800);
+    } else {
+      // 本地牌局：原有逻辑
+      storage.addRecord(payload);
+      storage.clearRecordDraft();
+      wx.showToast({ title: '保存成功', icon: 'success' });
+      setTimeout(() => wx.navigateBack(), 800);
+    }
   },
 
   goBack() {

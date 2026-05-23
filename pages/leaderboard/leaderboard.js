@@ -1,4 +1,5 @@
 const storage = require('../../utils/storage');
+const cloud = require('../../utils/cloud');
 
 Page({
   data: {
@@ -8,11 +9,21 @@ Page({
     minGames: 5
   },
 
-  onShow() {
+  async onShow() {
     const tableId = storage.getCurrentTableId();
+    const isCloud = storage.isCurrentTableCloud();
     const tables = storage.getTables();
     const cur = tables.find((t) => t.id === tableId) || tables[0];
-    const records = storage.getRecords(tableId);
+    let tableName = (cur && cur.name) || '默认牌局';
+    let records;
+    if (isCloud) {
+      records = await cloud.getCloudRecords(tableId, 200);
+      const myTables = await cloud.listMyTables();
+      const t = (myTables || []).find((x) => x._id === tableId);
+      if (t) tableName = '☁️ ' + t.name;
+    } else {
+      records = storage.getRecords(tableId);
+    }
     const stats = storage.computeReportStats(records);
     const minGames = storage.getMinGamesForRank(tableId);
     let list = (stats.players || [])
@@ -39,7 +50,7 @@ Page({
       };
     });
     this.setData({
-      tableName: (cur && cur.name) || '默认牌局',
+      tableName,
       list,
       isEmpty: list.length === 0,
       minGames
