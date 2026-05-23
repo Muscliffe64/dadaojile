@@ -321,23 +321,44 @@ async function listMyTables() {
 
 /**
  * 拉某个云牌局的所有成员（带 displayName / avatar / role）。
+ * **实时从 users 表读取最新 name/avatar**——table_members 里的字段只是加入时的快照，
+ * 用户改名后那个快照不一定会更新（除非又点了保存）。所以这里跨表 join 取最新值。
  * 返回数组：[{ openid, displayName, avatar, role, joinedAt }]
  */
 async function getTableMembers(tableId) {
   if (!tableId) return [];
   try {
-    const res = await db().collection('table_members')
+    const memRes = await db().collection('table_members')
       .where({ tableId })
       .orderBy('joinedAt', 'asc')
       .limit(50)
       .get();
-    return (res.data || []).map((m) => ({
-      openid: m.openid,
-      displayName: m.displayName || (m.openid || '').slice(-6),
-      avatar: m.avatar || '',
-      role: m.role,
-      joinedAt: m.joinedAt
-    }));
+    const members = memRes.data || [];
+    if (members.length === 0) return [];
+    // 批量取最新的 users 资料
+    const openids = members.map((m) => m.openid).filter(Boolean);
+    let userMap = {};
+    if (openids.length > 0) {
+      try {
+        const _ = db().command;
+        const usersRes = await db().collection('users')
+          .where({ _id: _.in(openids) })
+          .get();
+        for (const u of (usersRes.data || [])) userMap[u._id] = u;
+      } catch (e2) {
+        console.warn('[cloud.getTableMembers] read users failed:', e2);
+      }
+    }
+    return members.map((m) => {
+      const u = userMap[m.openid] || {};
+      return {
+        openid: m.openid,
+        displayName: u.name || m.displayName || (m.openid || '').slice(-6),
+        avatar: u.avatar || m.avatar || '',
+        role: m.role,
+        joinedAt: m.joinedAt
+      };
+    });
   } catch (e) {
     console.error('[cloud.getTableMembers]', e);
     return [];

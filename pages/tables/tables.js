@@ -207,7 +207,7 @@ Page({
     });
   },
 
-  /** 展开/收起某云牌局的成员名单；第一次展开时拉成员数据 */
+  /** 展开/收起某云牌局的成员名单；每次展开都重新拉，避免昵称变了还显示旧的 */
   async onToggleMembers(e) {
     const tableId = e.currentTarget.dataset.id;
     if (!tableId) return;
@@ -215,8 +215,8 @@ Page({
     const willOpen = !expanded[tableId];
     expanded[tableId] = willOpen;
     this.setData({ expandedMembers: expanded });
-    // 第一次展开 -> 拉成员
-    if (willOpen && !(this.data.membersMap && this.data.membersMap[tableId])) {
+    if (willOpen) {
+      // 每次展开都从云端实时取，不用缓存
       const members = await cloud.getTableMembers(tableId);
       const map = { ...(this.data.membersMap || {}) };
       map[tableId] = members;
