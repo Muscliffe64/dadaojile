@@ -48,6 +48,76 @@
 .cloud-row-3 .action-btn {
   font-size: 24rpx;
 }
+
+/* 成员展开/收起 */
+.members-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  align-self: flex-start;
+  font-size: 22rpx;
+  color: #0f4c81;
+  padding: 6rpx 14rpx;
+  background: #eef4fb;
+  border-radius: 999rpx;
+}
+.mt-arrow {
+  font-size: 22rpx;
+}
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 12rpx 14rpx;
+  background: #fafaf7;
+  border-radius: 12rpx;
+}
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.m-avatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: #ddd;
+  flex-shrink: 0;
+}
+.m-avatar-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f4c81;
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+.m-name {
+  flex: 1;
+  font-size: 26rpx;
+  color: #333;
+}
+.m-role-tag {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 999rpx;
+  font-weight: 600;
+}
+.m-role-owner {
+  background: #0f4c81;
+  color: #fff;
+}
+.m-role-member {
+  background: #eaf2fb;
+  color: #0f4c81;
+}
+.members-loading {
+  text-align: center;
+  font-size: 22rpx;
+  color: #999;
+  padding: 12rpx 0;
+}
 .cloud-meta {
   display: flex;
   align-items: center;

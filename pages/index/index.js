@@ -86,7 +86,13 @@ Page({
       }))
     ];
     let cur = tables.find((t) => t.id === tableId);
-    if (!cur) cur = tables[0];
+    if (!cur) {
+      // 之前选中的牌局可能已经被删（如别人删了云牌局），fallback 到第一个并把死 id 清掉
+      cur = tables[0];
+      if (cur && cur.id !== tableId) {
+        storage.setCurrentTableId(cur.id, !!cur.isCloud);
+      }
+    }
     const currentTableIndex = Math.max(0, tables.findIndex((t) => t.id === (cur && cur.id)));
     const currentIsCloud = !!(cur && cur.isCloud);
     // 云牌局的对局还没接进来（下个版本做），本地表才有真实数据

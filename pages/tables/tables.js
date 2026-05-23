@@ -9,7 +9,11 @@ Page({
     // 云牌局
     cloudTables: [],
     cloudLoading: false,
-    cloudReady: false
+    cloudReady: false,
+    // 哪些云牌局展开了成员列表 { tableId: true }
+    expandedMembers: {},
+    // 各云牌局的成员名单 { tableId: [{displayName, role, ...}] }
+    membersMap: {}
   },
 
   onShow() {
@@ -201,5 +205,22 @@ Page({
       data: code,
       success: () => wx.showToast({ title: '已复制邀请码：' + code, icon: 'none', duration: 2000 })
     });
+  },
+
+  /** 展开/收起某云牌局的成员名单；第一次展开时拉成员数据 */
+  async onToggleMembers(e) {
+    const tableId = e.currentTarget.dataset.id;
+    if (!tableId) return;
+    const expanded = { ...(this.data.expandedMembers || {}) };
+    const willOpen = !expanded[tableId];
+    expanded[tableId] = willOpen;
+    this.setData({ expandedMembers: expanded });
+    // 第一次展开 -> 拉成员
+    if (willOpen && !(this.data.membersMap && this.data.membersMap[tableId])) {
+      const members = await cloud.getTableMembers(tableId);
+      const map = { ...(this.data.membersMap || {}) };
+      map[tableId] = members;
+      this.setData({ membersMap: map });
+    }
   }
 });

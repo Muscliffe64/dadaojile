@@ -32,11 +32,27 @@
             <text class="member-count">{{ item.memberCount }} 人</text>
           </view>
         </view>
+
         <view class="invite-row" data-code="{{ item.inviteCode }}" bindtap="onCopyInvite">
           <text class="invite-label">邀请码</text>
           <text class="invite-code">{{ item.inviteCode }}</text>
           <text class="invite-copy">📋 点这里复制</text>
         </view>
+
+        <view class="members-toggle" data-id="{{ item._id }}" bindtap="onToggleMembers">
+          <text>{{ expandedMembers[item._id] ? '收起成员' : '查看成员（' + item.memberCount + '）' }}</text>
+          <text class="mt-arrow">{{ expandedMembers[item._id] ? '∧' : '∨' }}</text>
+        </view>
+        <view class="members-list" wx:if="{{ expandedMembers[item._id] }}">
+          <view class="member-row" wx:for="{{ membersMap[item._id] }}" wx:for-item="m" wx:key="openid">
+            <image class="m-avatar" wx:if="{{ m.avatar }}" src="{{ m.avatar }}" mode="aspectFill"/>
+            <view class="m-avatar m-avatar-empty" wx:else>{{ m.displayName ? m.displayName.charAt(0) : '?' }}</view>
+            <text class="m-name">{{ m.displayName }}</text>
+            <text class="m-role-tag m-role-{{ m.role }}">{{ m.role === 'owner' ? '创建者' : '成员' }}</text>
+          </view>
+          <view class="members-loading" wx:if="{{ !membersMap[item._id] }}">加载中...</view>
+        </view>
+
         <view class="cloud-row-3" wx:if="{{ item.role === 'owner' }}">
           <text
             class="action-btn danger"

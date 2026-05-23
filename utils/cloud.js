@@ -155,6 +155,7 @@ async function ensureUser() {
 
 /**
  * 更新当前用户的昵称/头像
+ * 先保证 users 记录存在（防止 update 在没记录时直接报错）。
  */
 async function saveProfile({ name, avatar }) {
   const openid = await getOpenid();
@@ -164,9 +165,12 @@ async function saveProfile({ name, avatar }) {
   if (typeof avatar === 'string') data.avatar = avatar;
   if (Object.keys(data).length === 0) return { ok: true };
   try {
+    // 保险：先确保记录存在
+    await ensureUser();
     await db().collection('users').doc(openid).update({ data });
     return { ok: true };
   } catch (e) {
+    console.error('[cloud.saveProfile]', e);
     return { ok: false, error: e && (e.errMsg || e.message) };
   }
 }
@@ -245,6 +249,8 @@ async function createTable(name) {
 /**
  * 列出我加入的所有云牌局。
  * 返回数组，每项包含 {_id, name, inviteCode, memberCount, ownerOpenid, role, joinedAt}
+ * memberCount 是**实时数 table_members 算出来的**，不依赖 tables.memberCount 字段（那个字段权限受限，
+ * 非 owner 加入时无法更新；改成动态计算后即使字段过期也显示对）
  */
 async function listMyTables() {
   const openid = await getOpenid();
@@ -266,7 +272,17 @@ async function listMyTables() {
       .get();
     const tableMap = {};
     for (const t of (tableRes.data || [])) tableMap[t._id] = t;
-    // 3) 组合
+    // 3) 实时统计每个 table 的真实成员数（云开发 count 接口）
+    const countByTable = {};
+    await Promise.all(tableIds.map(async (tid) => {
+      try {
+        const c = await db().collection('table_members').where({ tableId: tid }).count();
+        countByTable[tid] = c.total || 0;
+      } catch (e) {
+        countByTable[tid] = 1; // 兜底
+      }
+    }));
+    // 4) 组合
     const out = [];
     for (const m of members) {
       const t = tableMap[m.tableId];
@@ -276,7 +292,7 @@ async function listMyTables() {
         name: t.name,
         inviteCode: t.inviteCode,
         ownerOpenid: t.ownerOpenid,
-        memberCount: t.memberCount || 1,
+        memberCount: countByTable[m.tableId] || 1,
         role: m.role,
         joinedAt: m.joinedAt
       });
@@ -289,9 +305,40 @@ async function listMyTables() {
 }
 
 /**
+ * 拉某个云牌局的所有成员（带 displayName / avatar / role）。
+ * 返回数组：[{ openid, displayName, avatar, role, joinedAt }]
+ */
+async function getTableMembers(tableId) {
+  if (!tableId) return [];
+  try {
+    const res = await db().collection('table_members')
+      .where({ tableId })
+      .orderBy('joinedAt', 'asc')
+      .limit(50)
+      .get();
+    return (res.data || []).map((m) => ({
+      openid: m.openid,
+      displayName: m.displayName || (m.openid || '').slice(-6),
+      avatar: m.avatar || '',
+      role: m.role,
+      joinedAt: m.joinedAt
+    }));
+  } catch (e) {
+    console.error('[cloud.getTableMembers]', e);
+    return [];
+  }
+}
+
+/**
  * 删除云牌局（仅 owner 可删）。
- * 同时清掉 table_members 里所有相关记录。
- * 返回 { ok, error? }
+ * 尝试同时清掉 table_members 里所有相关记录。
+ *
+ * 已知限制：因为 table_members 集合权限是"创建者可写"，本调用只能删掉 owner 自己的
+ * member 记录，其他成员的成员记录会变成孤儿（指向已删的牌局）。
+ * listMyTables 会自动跳过孤儿（看不到对应 tables 就 continue），所以 UI 显示不会乱，
+ * 但数据库会有少量脏数据。彻底清理需要写 cloud function 用 admin 权限批量删。
+ *
+ * 返回 { ok, error?, orphanCount? }
  */
 async function deleteTable(tableId) {
   const openid = await getOpenid();
@@ -303,14 +350,17 @@ async function deleteTable(tableId) {
     if (tableRes.data.ownerOpenid !== openid) {
       return { ok: false, error: '只有创建者能删除' };
     }
-    // 删 table_members 里所有此 tableId 的成员记录
+    // 尝试删除所有 table_members 记录（其他人的会因权限拒绝失败，自己的能成功）
     const memRes = await db().collection('table_members').where({ tableId }).get();
+    let orphanCount = 0;
     for (const m of (memRes.data || [])) {
-      await db().collection('table_members').doc(m._id).remove().catch(() => {});
+      const ok = await db().collection('table_members').doc(m._id).remove()
+        .then(() => true).catch(() => false);
+      if (!ok) orphanCount += 1;
     }
-    // 删牌局本身
+    // 删牌局本身（owner 有权限）
     await db().collection('tables').doc(tableId).remove();
-    return { ok: true };
+    return { ok: true, orphanCount };
   } catch (e) {
     console.error('[cloud.deleteTable]', e);
     return { ok: false, error: e && (e.errMsg || e.message || String(e)) };
@@ -352,11 +402,8 @@ async function joinTableByCode(inviteCode) {
         joinedAt: db().serverDate()
       }
     });
-    // 4) 把 tables 的 memberCount 加 1
-    const _ = db().command;
-    await db().collection('tables').doc(table._id).update({
-      data: { memberCount: _.inc(1), updatedAt: db().serverDate() }
-    }).catch(() => {});
+    // 注意：不再 update tables.memberCount —— 因为 tables 权限是"创建者可写"，
+    // 非 owner 加入时这个 update 一定失败。改成在 listMyTables 里实时数 table_members 算出来。
     return { ok: true, table, alreadyJoined: false };
   } catch (e) {
     console.error('[cloud.joinTableByCode]', e);
@@ -375,6 +422,7 @@ module.exports = {
   getMyProfile,
   createTable,
   listMyTables,
+  getTableMembers,
   deleteTable,
   joinTableByCode
 };
