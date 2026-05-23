@@ -50,4 +50,47 @@
     </view>
     <button class="btn btn-primary" bindtap="save">保存 Key</button>
   </view>
+
+  <view class="card">
+    <view class="card-title">☁️ 我的云身份</view>
+    <text class="card-hint">用于加入/创建云牌局时让队友能认出你。所有数据只存在你自己的微信里和云数据库中。</text>
+
+    <view class="profile-row">
+      <image class="profile-avatar" wx:if="{{ myAvatar }}" src="{{ myAvatar }}" mode="aspectFill"/>
+      <view class="profile-avatar profile-avatar-empty" wx:else>{{ myName ? myName.charAt(0) : '?' }}</view>
+      <view class="profile-text">
+        <text class="profile-name">{{ myName || '(尚未设置)' }}</text>
+        <text class="profile-openid">openid: {{ openidMasked || '加载中...' }}</text>
+      </view>
+    </view>
+
+    <view class="profile-edit">
+      <button class="profile-avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">选择微信头像</button>
+      <view class="profile-name-row">
+        <input
+          class="apikey-input profile-name-input"
+          type="nickname"
+          placeholder="点这里输入昵称"
+          placeholder-class="apikey-placeholder"
+          value="{{ myNameEditing }}"
+          confirm-type="done"
+          cursor-spacing="40"
+          bindinput="onNameInput"
+          bindconfirm="onNameSave"
+        />
+        <view class="profile-save-btn {{ canSaveName ? 'active' : '' }}" bindtap="onNameSave">保存</view>
+      </view>
+      <text class="profile-edit-hint" wx:if="{{ saveStatus }}">{{ saveStatus }}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">☁️ 云开发连通测试</view>
+    <text class="card-hint">点一下，验证小程序到微信云数据库能写能读。成功的话会显示延迟和 openid；失败会告诉你卡在哪一步。</text>
+    <button class="btn btn-outline" bindtap="onCloudPing" loading="{{ cloudPinging }}">{{ cloudPinging ? '测试中...' : '测试云开发连通' }}</button>
+    <view class="cloud-result {{ cloudResult.ok ? 'ok' : 'err' }}" wx:if="{{ cloudResult }}">
+      <text wx:if="{{ cloudResult.ok }}">✅ 通了 · 延迟 {{ cloudResult.latencyMs }}ms · openid: {{ cloudResult.openid || '(未拿到)' }}</text>
+      <text wx:else>❌ 失败 · {{ cloudResult.error }}</text>
+    </view>
+  </view>
 </view>

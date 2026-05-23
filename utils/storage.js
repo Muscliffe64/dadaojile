@@ -209,16 +209,28 @@ function getCurrentTableId() {
   try {
     const v = wx.getStorageSync(CURRENT_TABLE_ID_KEY);
     const id = typeof v === 'string' ? v.trim() : '';
+    // 任何非空字符串都接受（云表 id 也是字符串，本地不一定有这个 id）
+    // 如果完全为空，回退到第一个本地表
+    if (id) return id;
     const tables = getTables();
-    const exists = tables.some((t) => t.id === id);
-    return exists ? id : (tables[0] ? tables[0].id : DEFAULT_TABLE_ID);
+    return tables[0] ? tables[0].id : DEFAULT_TABLE_ID;
   } catch (e) {
     return DEFAULT_TABLE_ID;
   }
 }
 
-function setCurrentTableId(id) {
+function setCurrentTableId(id, isCloud) {
   wx.setStorageSync(CURRENT_TABLE_ID_KEY, id || DEFAULT_TABLE_ID);
+  // 同步记下当前表是不是云表，供 record / history 等页快速判断
+  wx.setStorageSync('guandan_current_table_is_cloud', !!isCloud);
+}
+
+function isCurrentTableCloud() {
+  try {
+    return !!wx.getStorageSync('guandan_current_table_is_cloud');
+  } catch (e) {
+    return false;
+  }
 }
 
 function addRecords(batch, tableId) {
@@ -689,6 +701,7 @@ module.exports = {
   removeTable,
   getCurrentTableId,
   setCurrentTableId,
+  isCurrentTableCloud,
   DEFAULT_TABLE_ID,
   getLastImportIds,
   setLastImportIds,

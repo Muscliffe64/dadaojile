@@ -2,6 +2,38 @@
   padding-bottom: 48rpx;
 }
 
+/* 云牌局警告横幅（在 record 顶部）*/
+.cloud-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  margin: 24rpx 24rpx 12rpx;
+  padding: 18rpx 22rpx;
+  background: #fff8e6;
+  border: 2rpx solid #f2d28f;
+  border-radius: 14rpx;
+}
+.cw-icon {
+  font-size: 36rpx;
+  line-height: 1.2;
+}
+.cw-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.cw-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #9a5b00;
+}
+.cw-text {
+  font-size: 22rpx;
+  color: #6a5018;
+  line-height: 1.55;
+}
+
 .card {
   background: #fff;
   border-radius: 20rpx;

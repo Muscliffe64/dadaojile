@@ -10,3 +10,129 @@
 .action-btn.danger { color: #c0392b; }
 .btn-add { width: 100%; margin: 0; padding: 24rpx; font-size: 30rpx; color: #0f4c81; background: transparent; border: 2rpx dashed #0f4c81; border-radius: 12rpx; }
 .btn-add::after { border: none; }
+
+.card-hint {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin: -16rpx 0 24rpx;
+  line-height: 1.5;
+}
+.cloud-loading {
+  text-align: center;
+  font-size: 26rpx;
+  color: #999;
+  padding: 32rpx 0;
+}
+.cloud-empty {
+  text-align: center;
+  font-size: 26rpx;
+  color: #999;
+  padding: 24rpx 0;
+}
+.cloud-item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14rpx;
+}
+.cloud-row-1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.cloud-row-3 {
+  display: flex;
+  justify-content: flex-end;
+}
+.cloud-row-3 .action-btn {
+  font-size: 24rpx;
+}
+.cloud-meta {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.role-tag {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  font-weight: 600;
+}
+.role-owner {
+  background: #0f4c81;
+  color: #fff;
+}
+.role-member {
+  background: #eaf2fb;
+  color: #0f4c81;
+}
+.member-count {
+  font-size: 22rpx;
+  color: #999;
+}
+.invite-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 12rpx 16rpx;
+  background: #fafaf7;
+  border-radius: 10rpx;
+}
+.invite-label {
+  font-size: 22rpx;
+  color: #999;
+}
+.invite-code {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #0f4c81;
+  letter-spacing: 4rpx;
+  font-family: monospace;
+}
+.invite-copy {
+  font-size: 28rpx;
+}
+.cloud-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+.cloud-actions .btn-add {
+  flex: 1;
+}
+.cloud-add-btn {
+  color: #0f4c81;
+  border-color: #0f4c81;
+}
+.cloud-join-btn {
+  color: #c9a449;
+  border-color: #c9a449;
+  border-style: solid;
+}
+.invite-howto {
+  margin-top: 20rpx;
+  padding: 18rpx 22rpx;
+  background: #fff8e6;
+  border-radius: 12rpx;
+}
+.howto-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #9a5b00;
+  margin-bottom: 10rpx;
+}
+.howto-line {
+  display: block;
+  font-size: 24rpx;
+  color: #6a5018;
+  line-height: 1.7;
+}
+.no-cloud-hint {
+  text-align: center;
+  color: #999;
+  font-size: 26rpx;
+  padding: 32rpx;
+}

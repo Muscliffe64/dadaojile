@@ -1,5 +1,6 @@
 // 首页：排行榜、总局数、最近对局、牌局选择
 const storage = require('../../utils/storage');
+const cloud = require('../../utils/cloud');
 const { decorateRounds } = require('../../utils/handsReplay');
 
 function getTeam(record, side) {
@@ -61,13 +62,36 @@ Page({
     this.load();
   },
 
-  load() {
+  async load() {
     const tableId = storage.getCurrentTableId();
-    const tables = storage.getTables();
-    const cur = tables.find((t) => t.id === tableId) || tables[0];
-    const currentTableIndex = Math.max(0, tables.findIndex((t) => t.id === tableId));
-    const records = storage.getRecords(tableId);
-    const { total, weekTotal, leaderboard, records: list } = storage.getStats(records, tableId);
+    const localTables = storage.getTables() || [];
+    // 异步拉云牌局；不可用时返回空数组
+    const cloudTables = cloud.isReady() ? (await cloud.listMyTables()) : [];
+    // 合并：本地 + 云。给每条加 isCloud / displayName 字段
+    const tables = [
+      ...localTables.map((t) => ({
+        id: t.id,
+        name: t.name,
+        isCloud: false,
+        displayName: t.name
+      })),
+      ...cloudTables.map((t) => ({
+        id: t._id,
+        name: t.name,
+        isCloud: true,
+        role: t.role,
+        memberCount: t.memberCount,
+        inviteCode: t.inviteCode,
+        displayName: '☁️ ' + t.name
+      }))
+    ];
+    let cur = tables.find((t) => t.id === tableId);
+    if (!cur) cur = tables[0];
+    const currentTableIndex = Math.max(0, tables.findIndex((t) => t.id === (cur && cur.id)));
+    const currentIsCloud = !!(cur && cur.isCloud);
+    // 云牌局的对局还没接进来（下个版本做），本地表才有真实数据
+    const records = currentIsCloud ? [] : storage.getRecords(cur && cur.id);
+    const { total, weekTotal, leaderboard, records: list } = storage.getStats(records, cur && cur.id);
     // 截到"竞赛名次 <= 3"，并列同名次全包含；下一个名次跳到 positionInList。
     // 例：1/2/2/4 → 显示 A,B,C（D 是第 4 名，跳过）
     // 例：1/2/3/3 → 显示 A,B,C,D（都在前 3 名内）
@@ -102,9 +126,10 @@ Page({
     const players = storage.getPlayers();
     this.setData({
       tables,
-      currentTableId: tableId,
+      currentTableId: (cur && cur.id) || tableId,
       currentTableIndex,
       currentTableName: (cur && cur.name) || '默认牌局',
+      currentTableIsCloud: currentIsCloud,
       total,
       weekTotal,
       playerCount: players.length,
@@ -114,7 +139,7 @@ Page({
       recentExpanded: false,
       currentStreaks,
       isEmpty: !list || list.length === 0,
-      minGames: storage.getMinGamesForRank(tableId),
+      minGames: storage.getMinGamesForRank(cur && cur.id),
       expandedRounds: {}
     });
   },
@@ -132,7 +157,7 @@ Page({
     const { tables } = this.data;
     const t = tables[idx];
     if (t) {
-      storage.setCurrentTableId(t.id);
+      storage.setCurrentTableId(t.id, t.isCloud);
       this.load();
     }
   },

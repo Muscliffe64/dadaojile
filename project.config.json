@@ -1,5 +1,6 @@
 {
   "description": "打到几了 - 掼蛋对局统计小程序",
+  "cloudfunctionRoot": "cloudfunctions/",
   "packOptions": {
     "ignore": [
       {

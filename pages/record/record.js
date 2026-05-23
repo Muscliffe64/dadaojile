@@ -310,7 +310,9 @@ Page({
     historyExpanded: true,
     // 历史搭配（自动从最近 records 提取）
     recentPairings: [],
-    showRecentPairings: true   // 开关，跟随用户偏好持久化
+    showRecentPairings: true,   // 开关，跟随用户偏好持久化
+    // 当前是不是云牌局（云牌局对局录入下版上线，这版给提示）
+    currentTableIsCloud: false
   },
 
   onLoad() {
@@ -322,7 +324,8 @@ Page({
       pairingMode: mode,
       pairingIndex: idx,
       placeholders: findPairing(mode).placeholders,
-      showRecentPairings: storage.getShowRecentPairings()
+      showRecentPairings: storage.getShowRecentPairings(),
+      currentTableIsCloud: storage.isCurrentTableCloud()
     });
     this.loadPlayers();
     this._restoreDraft();

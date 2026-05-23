@@ -52,6 +52,29 @@
   padding: 4rpx 12rpx;
 }
 
+/* ===== 云牌局横幅（提示这是云的，功能还在做） ===== */
+.cloud-table-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  padding: 16rpx 20rpx;
+  margin-bottom: 16rpx;
+  background: #eef4fb;
+  border: 2rpx solid #cfe0f4;
+  border-radius: 14rpx;
+}
+.ctb-icon {
+  font-size: 28rpx;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.ctb-text {
+  flex: 1;
+  font-size: 22rpx;
+  color: #4a6c8e;
+  line-height: 1.5;
+}
+
 /* ===== 两段统计：248 / 42 ===== */
 .stats-row {
   display: flex;

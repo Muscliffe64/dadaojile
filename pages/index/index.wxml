@@ -2,14 +2,19 @@
   <!-- ① 顶部统计卡 + 胜率排行 -->
   <view class="section">
     <view class="table-row">
-      <picker mode="selector" range="{{ tables }}" range-key="name" value="{{ currentTableIndex }}" bindchange="onTableChange" class="table-picker-wrap">
+      <picker mode="selector" range="{{ tables }}" range-key="displayName" value="{{ currentTableIndex }}" bindchange="onTableChange" class="table-picker-wrap">
         <view class="table-picker">
-          <text class="table-label">🎴 牌局</text>
+          <text class="table-label">{{ currentTableIsCloud ? '☁️' : '🎴' }} 牌局</text>
           <text class="table-name">{{ currentTableName }}</text>
           <text class="table-arrow">›</text>
         </view>
       </picker>
       <view class="table-manage" bindtap="goTables">管理</view>
+    </view>
+
+    <view class="cloud-table-banner" wx:if="{{ currentTableIsCloud }}">
+      <text class="ctb-icon">☁️</text>
+      <text class="ctb-text">这是云牌局。"对局上云"功能正在做（下个版本），暂时还看不到对局数据；多人共享框架已就绪。</text>
     </view>
 
     <view class="stats-row">

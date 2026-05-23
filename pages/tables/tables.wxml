@@ -1,6 +1,7 @@
 <view class="container">
   <view class="card">
-    <view class="card-title">牌局列表</view>
+    <view class="card-title">📁 本地牌局</view>
+    <text class="card-hint">只存在你这台手机，单机用</text>
     <view class="table-list">
       <view class="table-item" wx:for="{{ list }}" wx:key="id">
         <view class="table-info">
@@ -13,6 +14,59 @@
         </view>
       </view>
     </view>
-    <button class="btn-add" bindtap="onAdd">+ 新建牌局</button>
+    <button class="btn-add" bindtap="onAdd">+ 新建本地牌局</button>
+  </view>
+
+  <view class="card" wx:if="{{ cloudReady }}">
+    <view class="card-title">☁️ 云牌局</view>
+    <text class="card-hint">和朋友共享，谁记的大家都能看；需要每个人加入</text>
+
+    <view class="cloud-loading" wx:if="{{ cloudLoading }}">加载中...</view>
+
+    <view class="table-list" wx:if="{{ cloudTables.length > 0 }}">
+      <view class="table-item cloud-item" wx:for="{{ cloudTables }}" wx:key="_id">
+        <view class="cloud-row-1">
+          <text class="table-name">{{ item.name }}</text>
+          <view class="cloud-meta">
+            <text class="role-tag role-{{ item.role }}">{{ item.role === 'owner' ? '我创建' : '已加入' }}</text>
+            <text class="member-count">{{ item.memberCount }} 人</text>
+          </view>
+        </view>
+        <view class="invite-row" data-code="{{ item.inviteCode }}" bindtap="onCopyInvite">
+          <text class="invite-label">邀请码</text>
+          <text class="invite-code">{{ item.inviteCode }}</text>
+          <text class="invite-copy">📋 点这里复制</text>
+        </view>
+        <view class="cloud-row-3" wx:if="{{ item.role === 'owner' }}">
+          <text
+            class="action-btn danger"
+            data-id="{{ item._id }}"
+            data-name="{{ item.name }}"
+            data-role="{{ item.role }}"
+            bindtap="onDeleteCloud"
+          >删除牌局</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="cloud-empty" wx:elif="{{ !cloudLoading }}">
+      <text>还没有云牌局，点下面新建一个，或用邀请码加入朋友的</text>
+    </view>
+
+    <view class="cloud-actions">
+      <button class="btn-add cloud-add-btn" bindtap="onAddCloud">+ 新建云牌局</button>
+      <button class="btn-add cloud-join-btn" bindtap="onJoinByCode">用邀请码加入</button>
+    </view>
+
+    <view class="invite-howto" wx:if="{{ cloudTables.length > 0 }}">
+      <text class="howto-title">💡 邀请码怎么用？</text>
+      <text class="howto-line">1. 把上面那个 6 位邀请码（如 6AZK3G）发给朋友</text>
+      <text class="howto-line">2. 朋友进小程序 → 牌局管理 → 点"用邀请码加入"，输入这个码</text>
+      <text class="howto-line">3. 加入后，他在自己手机上记的对局你也能看到（接下来要做的功能）</text>
+    </view>
+  </view>
+
+  <view class="card no-cloud-hint" wx:else>
+    <text>云开发未启用，云牌局功能不可用</text>
   </view>
 </view>
