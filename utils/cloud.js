@@ -170,6 +170,9 @@ async function saveProfile({ name, avatar }) {
     await ensureUser();
     await db().collection('users').doc(openid).update({ data });
     // 同步到自己所有 table_members（permissions OK，自己是创建者）
+    // FIXME: 客户端 .get() 单次硬上限 20 条。如果该用户加入了 > 20 个云牌局，
+    //   只能同步前 20 个，其余的 displayName/avatar 仍是旧快照。
+    //   修法：写云函数批量更新。当前小规模（< 5 牌局）用不到。
     try {
       const myMembersRes = await db().collection('table_members').where({ openid }).get();
       const mUpdate = {};
@@ -216,19 +219,33 @@ async function resolveCloudFiles(fileIDs) {
     (id) => typeof id === 'string' && id.indexOf('cloud://') === 0
   );
   if (list.length === 0) return {};
+  // 先试客户端 SDK（如果该文件是当前用户上传的，权限允许，最快）
+  const map = {};
   try {
     const res = await wx.cloud.getTempFileURL({ fileList: list });
-    const map = {};
     for (const item of (res.fileList || [])) {
       if (item.status === 0 && item.tempFileURL) {
         map[item.fileID] = item.tempFileURL;
       }
     }
-    return map;
   } catch (e) {
-    console.warn('[cloud.resolveCloudFiles]', e);
-    return {};
+    console.warn('[cloud.resolveCloudFiles] client side failed:', e);
   }
+  // 客户端没拿到的（多半是别人上传的文件，免费版权限拦了）→ 走云函数用 admin 权限拿
+  const missing = list.filter((id) => !map[id]);
+  if (missing.length > 0) {
+    try {
+      const cf = await wx.cloud.callFunction({
+        name: 'getAvatarUrls',
+        data: { fileList: missing }
+      });
+      const cfUrls = (cf && cf.result && cf.result.urls) || {};
+      Object.assign(map, cfUrls);
+    } catch (e2) {
+      console.warn('[cloud.resolveCloudFiles] cloud function failed:', e2);
+    }
+  }
+  return map;
 }
 
 /** 单个 cloud:// URL 转 https://；不是 cloud:// 的原样返回 */
@@ -310,6 +327,9 @@ async function listMyTables() {
   if (!openid) return [];
   try {
     // 1) 我加入的所有 table_members 记录
+    // FIXME: .limit(50) 实际被客户端 .get() 20 条硬上限覆盖。
+    //   用户加入 > 20 个云牌局时只能看到前 20 个。
+    //   修法：包装成云函数。当前个人/朋友用法到不了 20 个。
     const memRes = await db().collection('table_members')
       .where({ openid })
       .orderBy('joinedAt', 'desc')
@@ -366,6 +386,9 @@ async function listMyTables() {
 async function getTableMembers(tableId) {
   if (!tableId) return [];
   try {
+    // FIXME: 客户端 .get() 单次硬上限 20 条。某个牌局 > 20 个成员时只能看 20 个。
+    // FIXME: 下面 _.in(openids) 也受同样限制——20+ 成员时 users 资料拉不全。
+    //   修法：包装成云函数。4-6 人小群体到不了 20 人。
     const memRes = await db().collection('table_members')
       .where({ tableId })
       .orderBy('joinedAt', 'asc')
@@ -529,21 +552,23 @@ async function addCloudRecord(tableId, record) {
 }
 
 /**
- * 拉取某个云牌局的对局记录（按日期倒序，默认最多 100 条）。
- * 因为 records 集合权限是"登录用户可读"，能拿到所有成员录的对局。
+ * 拉取某个云牌局的对局记录（按日期倒序，默认最多 500 条）。
+ *
+ * 走云函数而不是直接 db.collection().get()，因为：
+ *   - 小程序客户端 SDK 单次 .get() 上限是 20 条（硬限制，没法绕开）
+ *   - 云函数端 SDK 单次 .get() 上限 100 条，再用 skip 分页就能拿到 1000 条
+ *
  * 返回数组（与本地 record 结构一致 + 多了 _id / _openid / recorderName）
  */
 async function getCloudRecords(tableId, limit) {
   if (!tableId) return [];
-  const max = Math.min(limit || 100, 100);
   try {
-    const res = await db().collection('records')
-      .where({ tableId })
-      .orderBy('date', 'desc')
-      .orderBy('createdAt', 'desc')
-      .limit(max)
-      .get();
-    return (res.data || []).map((r) => ({
+    const res = await wx.cloud.callFunction({
+      name: 'getRecords',
+      data: { tableId, limit: limit || 500 }
+    });
+    const records = (res && res.result && res.result.records) || [];
+    return records.map((r) => ({
       id: r._id,
       _id: r._id,
       _openid: r._openid,
@@ -579,6 +604,51 @@ async function deleteCloudRecord(recordId) {
   }
 }
 
+/**
+ * 把本地牌局一键迁移到云：建新云牌局 + 上传所有对局 + 自动加创建者为 owner。
+ * 不动本地原牌局，让用户自己确认后再删（避免迁移失败丢数据）。
+ *
+ * 入参：
+ *   - name: 新云牌局名字（建议跟本地一致）
+ *   - records: 本地对局数组
+ *   - onProgress(i, total): 每条上传完调一次，给 UI 更新进度
+ * 返回：{ ok, table?: {_id, name, inviteCode}, uploaded, failed, error? }
+ */
+async function copyLocalTableToCloud(name, records, onProgress) {
+  if (!Array.isArray(records)) records = [];
+  // 1. 建新云牌局
+  const create = await createTable(name);
+  if (!create.ok) return { ok: false, error: '创建云牌局失败：' + (create.error || '未知') };
+  const newTable = create.table;
+  // 2. 逐条上传对局
+  let uploaded = 0, failed = 0;
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i];
+    const payload = {
+      date: r.date,
+      writtenAt: r.writtenAt,
+      teamA: r.teamA || [],
+      teamB: r.teamB || [],
+      winner: r.winner,
+      score: r.score || '',
+      ranks: r.ranks,
+      rounds: r.rounds
+    };
+    const res = await addCloudRecord(newTable._id, payload);
+    if (res.ok) uploaded++;
+    else failed++;
+    if (typeof onProgress === 'function') {
+      try { onProgress(i + 1, records.length); } catch (e) {}
+    }
+  }
+  return {
+    ok: true,
+    table: newTable,
+    uploaded,
+    failed
+  };
+}
+
 module.exports = {
   ENV_ID,
   isReady,
@@ -597,5 +667,6 @@ module.exports = {
   getCloudRecords,
   deleteCloudRecord,
   resolveCloudFiles,
-  resolveOneCloudFile
+  resolveOneCloudFile,
+  copyLocalTableToCloud
 };

@@ -9,6 +9,7 @@
           <text class="table-count">{{ counts[item.id] || 0 }} 局</text>
         </view>
         <view class="table-actions">
+          <text class="action-btn cloud-convert" wx:if="{{ cloudReady && (counts[item.id] || 0) > 0 }}" data-id="{{ item.id }}" data-name="{{ item.name }}" bindtap="onConvertToCloud">☁️ 转为云</text>
           <text class="action-btn" data-id="{{ item.id }}" data-name="{{ item.name }}" bindtap="onRename">重命名</text>
           <text class="action-btn danger" data-id="{{ item.id }}" data-name="{{ item.name }}" bindtap="onDelete">删除</text>
         </view>

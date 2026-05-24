@@ -1,4 +1,13 @@
 <view class="container">
+  <!-- 云牌局警告：CSV 导入不支持云表 -->
+  <view class="cloud-warn-banner" wx:if="{{ isCloudTable }}">
+    <text class="cwb-icon">☁️</text>
+    <view class="cwb-body">
+      <text class="cwb-title">当前是云牌局，CSV 导入暂不可用</text>
+      <text class="cwb-text">要导入数据请先回首页切到本地牌局。要把本地数据迁到云，请去"牌局管理"用"☁️ 转为云"功能。</text>
+    </view>
+  </view>
+
   <!-- 1. 数据导入（置顶） -->
   <view class="card card-import">
     <view class="card-title">📥 数据导入</view>

@@ -1,0 +1,9 @@
+{
+  "name": "getRecords",
+  "version": "1.0.0",
+  "description": "拉取云牌局对局记录，内部分页突破单次条数限制",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

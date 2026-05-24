@@ -207,6 +207,55 @@ Page({
     });
   },
 
+  /** 一键把本地牌局转成云牌局：复制所有对局到云，本地原牌局保留待用户自行删除 */
+  onConvertToCloud(e) {
+    const { id, name } = e.currentTarget.dataset;
+    if (!id) return;
+    if (!cloud.isReady()) {
+      wx.showToast({ title: '云开发未就绪', icon: 'none' });
+      return;
+    }
+    const allRecords = storage.getRecords(id) || [];
+    if (allRecords.length === 0) {
+      wx.showModal({
+        title: '本地牌局为空',
+        content: '这个本地牌局没有对局，直接"新建云牌局"即可，不需要迁移。',
+        showCancel: false
+      });
+      return;
+    }
+    wx.showModal({
+      title: '转为云牌局',
+      content: `将"${name}"复制到云端（${allRecords.length} 条对局）。完成后会出现新的云牌局，可以邀请朋友加入。\n\n本地原牌局会保留，验证云上数据无误后你可以手动删除。`,
+      confirmText: '开始迁移',
+      success: async (res) => {
+        if (!res.confirm) return;
+        const total = allRecords.length;
+        wx.showLoading({ title: '创建云牌局...', mask: true });
+        const r = await cloud.copyLocalTableToCloud(name, allRecords, (i) => {
+          wx.showLoading({ title: `上传 ${i}/${total}...`, mask: true });
+        });
+        wx.hideLoading();
+        if (!r.ok) {
+          wx.showModal({ title: '迁移失败', content: r.error || '未知', showCancel: false });
+          return;
+        }
+        const msg = `✅ 已迁移到云牌局"${r.table.name}"
+邀请码：${r.table.inviteCode}
+上传成功 ${r.uploaded} 条${r.failed > 0 ? '，失败 ' + r.failed + ' 条' : ''}
+
+本地原牌局还在，等你验证云上数据 OK 再手动删它。`;
+        wx.showModal({
+          title: '迁移完成',
+          content: msg,
+          confirmText: '好',
+          showCancel: false,
+          success: () => this._loadCloudTables()
+        });
+      }
+    });
+  },
+
   /** 展开/收起某云牌局的成员名单；每次展开都重新拉，避免昵称变了还显示旧的 */
   async onToggleMembers(e) {
     const tableId = e.currentTarget.dataset.id;

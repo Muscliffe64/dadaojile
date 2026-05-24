@@ -1,6 +1,7 @@
 const storage = require('../../utils/storage');
 const { parseCsv, collectNames } = require('../../utils/importCsv');
 const aiReport = require('../../utils/aiReport');
+const cloud = require('../../utils/cloud');
 
 const RANGE_OPTIONS = [
   { value: 'all', label: '本牌局全部' },
@@ -33,6 +34,7 @@ Page({
     dedupe: true,
     canUndo: false,
     recordCount: 0,
+    isCloudTable: false,
     // 导出范围 / 格式 / 自定义日期
     exportRange: 'all',
     exportRangeIndex: 0,
@@ -45,14 +47,29 @@ Page({
     exportPreviewCount: 0
   },
 
-  onShow() {
+  async onShow() {
     const tableId = storage.getCurrentTableId();
+    const isCloudTable = storage.isCurrentTableCloud();
     const tables = storage.getTables();
     const cur = tables.find((t) => t.id === tableId) || tables[0];
-    const recordCount = storage.getRecords(tableId).length;
+    let tableName = (cur && cur.name) || '默认牌局';
+    let recordCount = 0;
+    if (isCloudTable) {
+      // 云表用云接口拿名字 + 数量
+      const myTables = (cloud.isReady() && await cloud.listMyTables()) || [];
+      const t = myTables.find((x) => x._id === tableId);
+      if (t) {
+        tableName = '☁️ ' + t.name;
+      }
+      // 数量不在导入流程里用，先给 0；展示用
+      recordCount = 0;
+    } else {
+      recordCount = storage.getRecords(tableId).length;
+    }
     this.setData({
-      tableName: (cur && cur.name) || '默认牌局',
+      tableName,
       recordCount,
+      isCloudTable,
       canUndo: storage.getLastImportIds().length > 0,
       customStart: this.data.customStart || daysAgoStr(30),
       customEnd: this.data.customEnd || todayStr()
@@ -164,6 +181,15 @@ Page({
   },
 
   doImport() {
+    // 拦截：当前是云牌局时 CSV 导入暂不支持
+    if (this.data.isCloudTable) {
+      wx.showModal({
+        title: '云牌局暂不支持导入',
+        content: '请先在首页 picker 切到一个本地牌局，再来导入 CSV。\n\n如要把本地数据迁到云，请去"牌局管理"用本地牌局的"☁️ 转为云"功能。',
+        showCancel: false
+      });
+      return;
+    }
     const text = (this.data.textarea || '').trim();
     if (!text) {
       wx.showToast({ title: '请粘贴或选择 CSV', icon: 'none' });

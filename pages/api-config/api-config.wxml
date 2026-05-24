@@ -84,13 +84,4 @@
     </view>
   </view>
 
-  <view class="card">
-    <view class="card-title">☁️ 云开发连通测试</view>
-    <text class="card-hint">点一下，验证小程序到微信云数据库能写能读。成功的话会显示延迟和 openid；失败会告诉你卡在哪一步。</text>
-    <button class="btn btn-outline" bindtap="onCloudPing" loading="{{ cloudPinging }}">{{ cloudPinging ? '测试中...' : '测试云开发连通' }}</button>
-    <view class="cloud-result {{ cloudResult.ok ? 'ok' : 'err' }}" wx:if="{{ cloudResult }}">
-      <text wx:if="{{ cloudResult.ok }}">✅ 通了 · 延迟 {{ cloudResult.latencyMs }}ms · openid: {{ cloudResult.openid || '(未拿到)' }}</text>
-      <text wx:else>❌ 失败 · {{ cloudResult.error }}</text>
-    </view>
-  </view>
 </view>

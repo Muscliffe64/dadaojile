@@ -1,13 +1,18 @@
 const storage = require('../../utils/storage');
 const cloud = require('../../utils/cloud');
 
-function buildOverrides() {
-  const tables = storage.getTables() || [];
+// 根据合并后的 tables（含 isCloud / displayName）+ 已存的 minGames 映射，拼一个 overrides 列表
+function buildOverrides(tables) {
   const map = storage.getMinGamesPerTable() || {};
   const list = [];
-  for (const t of tables) {
+  for (const t of (tables || [])) {
     if (map[t.id] != null) {
-      list.push({ id: t.id, name: t.name || '(未命名)', value: map[t.id] });
+      list.push({
+        id: t.id,
+        name: t.displayName || t.name || '(未命名)',
+        value: map[t.id],
+        isCloud: !!t.isCloud
+      });
     }
   }
   return list;
@@ -21,8 +26,6 @@ Page({
     pickerIndex: 0,
     addInput: '',
     overrides: [],
-    cloudPinging: false,
-    cloudResult: null,
     // 我的云身份
     myOpenid: '',
     openidMasked: '',
@@ -33,16 +36,32 @@ Page({
     saveStatus: ''
   },
 
-  onShow() {
+  async onShow() {
     const key = storage.getDeepSeekApiKey() || '';
-    const tables = storage.getTables() || [];
+    // 合并本地+云牌局，云的带 ☁️ 前缀
+    const localTables = storage.getTables() || [];
+    const cloudTables = cloud.isReady() ? (await cloud.listMyTables()) : [];
+    const tables = [
+      ...localTables.map((t) => ({
+        id: t.id,
+        name: t.name,
+        isCloud: false,
+        displayName: t.name || '(未命名)'
+      })),
+      ...cloudTables.map((t) => ({
+        id: t._id,
+        name: t.name,
+        isCloud: true,
+        displayName: '☁️ ' + (t.name || '(未命名)')
+      }))
+    ];
     this.setData({
       apiKey: key,
       tables,
-      tableNames: tables.map((t) => t.name || '(未命名)'),
+      tableNames: tables.map((t) => t.displayName),
       pickerIndex: 0,
       addInput: '',
-      overrides: buildOverrides()
+      overrides: buildOverrides(tables)
     });
     this._loadMyProfile();
   },
@@ -194,10 +213,10 @@ Page({
     }
     if (storage.setMinGamesForTable(t.id, v)) {
       this.setData({
-        overrides: buildOverrides(),
+        overrides: buildOverrides(tables),
         addInput: ''
       });
-      wx.showToast({ title: `已设：${t.name} ${v} 局`, icon: 'success' });
+      wx.showToast({ title: `已设：${t.displayName} ${v} 局`, icon: 'success' });
     } else {
       wx.showToast({ title: '保存失败', icon: 'none' });
     }
@@ -207,19 +226,7 @@ Page({
     const id = e.currentTarget.dataset.id;
     if (!id) return;
     storage.clearMinGamesForTable(id);
-    this.setData({ overrides: buildOverrides() });
+    this.setData({ overrides: buildOverrides(this.data.tables) });
     wx.showToast({ title: '已移除', icon: 'none' });
-  },
-
-  async onCloudPing() {
-    if (this.data.cloudPinging) return;
-    this.setData({ cloudPinging: true, cloudResult: null });
-    const res = await cloud.ping();
-    this.setData({ cloudPinging: false, cloudResult: res });
-    if (res.ok) {
-      wx.showToast({ title: '云开发通了', icon: 'success' });
-    } else {
-      wx.showToast({ title: '失败：' + (res.error || '未知').slice(0, 30), icon: 'none', duration: 3000 });
-    }
   }
 });

@@ -468,15 +468,37 @@ Page({
     }
   },
 
-  loadPlayers() {
-    const players = storage.getPlayers();
-    const { teamA, teamB } = this.data;
-    const opts = computeSlotOptions(teamA || ['', ''], teamB || ['', ''], players || []);
-    // 从当前牌局的最近对局里提取去重的 4 人搭配，作为快速填充候选
+  async loadPlayers() {
+    const localPlayers = storage.getPlayers() || [];
     const tableId = storage.getCurrentTableId();
-    const allRecords = storage.getRecords(tableId) || [];
-    // 按 createdAt / date 倒序，最新的优先
-    const sortedRecords = allRecords.slice().sort((a, b) => {
+    const isCloud = storage.isCurrentTableCloud();
+    // 云表：把云对局里出现过的玩家名也并进 players 列表，
+    // 不然新加入云牌局的人本地没有参与人，根本没法选 4 个人来录入
+    let players = [...localPlayers];
+    let records = [];
+    if (isCloud) {
+      try {
+        records = await cloud.getCloudRecords(tableId, 200);
+        const seen = new Set(players);
+        for (const r of records) {
+          for (const name of [...(r.teamA || []), ...(r.teamB || [])]) {
+            if (name && !seen.has(name)) {
+              players.push(name);
+              seen.add(name);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[record.loadPlayers] cloud fetch failed', e);
+      }
+    } else {
+      records = storage.getRecords(tableId) || [];
+    }
+
+    const { teamA, teamB } = this.data;
+    const opts = computeSlotOptions(teamA || ['', ''], teamB || ['', ''], players);
+    // 最近搭配：用同一份 records 列表算
+    const sortedRecords = records.slice().sort((a, b) => {
       const da = (a.date || '') + ' ' + (a.writtenAt || '');
       const db = (b.date || '') + ' ' + (b.writtenAt || '');
       if (da !== db) return db.localeCompare(da);
@@ -794,9 +816,12 @@ Page({
   },
 
   validate() {
-    const { date, teamA, teamB, winner, players, rankEnabled, gameOver, rounds } = this.data;
+    const { date, teamA, teamB, winner, players, rankEnabled, gameOver, rounds, currentTableIsCloud } = this.data;
     if (!players || players.length < 4) {
-      wx.showToast({ title: '请先在「参与人」中添加至少 4 人', icon: 'none' });
+      const msg = currentTableIsCloud
+        ? '这个云牌局还没足够玩家。先去"参与人"里加 4 个名字（不需要他们装小程序）'
+        : '请先在「参与人」中添加至少 4 人';
+      wx.showToast({ title: msg, icon: 'none', duration: 3000 });
       setTimeout(() => wx.navigateTo({ url: '/pages/players/players' }), 1500);
       return false;
     }

@@ -1,0 +1,9 @@
+{
+  "name": "getAvatarUrls",
+  "version": "1.0.0",
+  "description": "Admin-perm 拿到任意用户头像的 https:// 临时 URL，绕过免费版云存储的私读限制",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
