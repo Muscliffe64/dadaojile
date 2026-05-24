@@ -50,18 +50,37 @@
             <view class="m-avatar m-avatar-empty" wx:else>{{ m.displayName ? m.displayName.charAt(0) : '?' }}</view>
             <text class="m-name">{{ m.displayName }}</text>
             <text class="m-role-tag m-role-{{ m.role }}">{{ m.role === 'owner' ? '创建者' : '成员' }}</text>
+            <!-- Owner 看到非自己非 owner 的成员 → 显示踢出按钮 -->
+            <text
+              wx:if="{{ item.role === 'owner' && m.role !== 'owner' && m.openid !== myOpenid }}"
+              class="m-kick"
+              data-tableid="{{ item._id }}"
+              data-openid="{{ m.openid }}"
+              data-name="{{ m.displayName }}"
+              bindtap="onKickMember"
+            >踢出</text>
           </view>
           <view class="members-loading" wx:if="{{ !membersMap[item._id] }}">加载中...</view>
         </view>
 
-        <view class="cloud-row-3" wx:if="{{ item.role === 'owner' }}">
+        <view class="cloud-row-3">
+          <!-- Owner 看到删除牌局 -->
           <text
+            wx:if="{{ item.role === 'owner' }}"
             class="action-btn danger"
             data-id="{{ item._id }}"
             data-name="{{ item.name }}"
             data-role="{{ item.role }}"
             bindtap="onDeleteCloud"
           >删除牌局</text>
+          <!-- 非 Owner 看到退出 -->
+          <text
+            wx:else
+            class="action-btn danger"
+            data-id="{{ item._id }}"
+            data-name="{{ item.name }}"
+            bindtap="onLeaveCloud"
+          >退出牌局</text>
         </view>
       </view>
     </view>

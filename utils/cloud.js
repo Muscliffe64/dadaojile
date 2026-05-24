@@ -649,6 +649,52 @@ async function copyLocalTableToCloud(name, records, onProgress) {
   };
 }
 
+/**
+ * 成员主动退出云牌局（删自己的 table_members 记录）。
+ * owner 不能用这个，要用 deleteTable 删整个牌局。
+ * 退出后他自己之前录的对局保留在云端，其他成员仍能看到。
+ */
+async function leaveTable(tableId) {
+  if (!tableId) return { ok: false, error: '缺少 tableId' };
+  const openid = await getOpenid();
+  if (!openid) return { ok: false, error: '未拿到 openid' };
+  try {
+    const memRes = await db().collection('table_members')
+      .where({ tableId, openid })
+      .limit(1)
+      .get();
+    if (!memRes.data || memRes.data.length === 0) {
+      return { ok: false, error: '你不在这个牌局' };
+    }
+    const mem = memRes.data[0];
+    if (mem.role === 'owner') {
+      return { ok: false, error: '创建者不能退出，只能"删除牌局"' };
+    }
+    await db().collection('table_members').doc(mem._id).remove();
+    return { ok: true };
+  } catch (e) {
+    console.error('[cloud.leaveTable]', e);
+    return { ok: false, error: e && (e.errMsg || e.message || String(e)) };
+  }
+}
+
+/**
+ * Owner 踢出某成员（走云函数，因为客户端 owner 没权限改别人的 table_members 记录）。
+ */
+async function kickMember(tableId, memberOpenid) {
+  if (!tableId || !memberOpenid) return { ok: false, error: '缺少参数' };
+  try {
+    const res = await wx.cloud.callFunction({
+      name: 'removeTableMember',
+      data: { tableId, openid: memberOpenid }
+    });
+    return (res && res.result) || { ok: false, error: '云函数无返回' };
+  } catch (e) {
+    console.error('[cloud.kickMember]', e);
+    return { ok: false, error: e && (e.errMsg || e.message || String(e)) };
+  }
+}
+
 module.exports = {
   ENV_ID,
   isReady,
@@ -668,5 +714,7 @@ module.exports = {
   deleteCloudRecord,
   resolveCloudFiles,
   resolveOneCloudFile,
-  copyLocalTableToCloud
+  copyLocalTableToCloud,
+  leaveTable,
+  kickMember
 };

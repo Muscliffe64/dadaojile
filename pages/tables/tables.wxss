@@ -119,6 +119,15 @@
   color: #999;
   padding: 12rpx 0;
 }
+.m-kick {
+  font-size: 22rpx;
+  color: #c0392b;
+  padding: 4rpx 14rpx;
+  background: #fdecea;
+  border-radius: 999rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
 .cloud-meta {
   display: flex;
   align-items: center;

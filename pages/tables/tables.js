@@ -10,6 +10,8 @@ Page({
     cloudTables: [],
     cloudLoading: false,
     cloudReady: false,
+    // 当前用户的 openid（用来判断"自己"，决定要不要显示踢出按钮）
+    myOpenid: '',
     // 哪些云牌局展开了成员列表 { tableId: true }
     expandedMembers: {},
     // 各云牌局的成员名单 { tableId: [{displayName, role, ...}] }
@@ -35,8 +37,11 @@ Page({
   async _loadCloudTables() {
     if (!cloud.isReady()) return;
     this.setData({ cloudLoading: true });
-    const tables = await cloud.listMyTables();
-    this.setData({ cloudTables: tables, cloudLoading: false });
+    const [tables, openid] = await Promise.all([
+      cloud.listMyTables(),
+      cloud.getOpenid()
+    ]);
+    this.setData({ cloudTables: tables, cloudLoading: false, myOpenid: openid || '' });
   },
 
   onAdd() {
@@ -252,6 +257,62 @@ Page({
           showCancel: false,
           success: () => this._loadCloudTables()
         });
+      }
+    });
+  },
+
+  /** 非 owner 退出云牌局 */
+  onLeaveCloud(e) {
+    const tableId = e.currentTarget.dataset.id;
+    const name = e.currentTarget.dataset.name;
+    if (!tableId) return;
+    wx.showModal({
+      title: '退出云牌局',
+      content: `退出"${name}"后，这个牌局从你这边消失。你之前录的对局会保留在云端，其他成员仍能看到。\n\n确定退出？`,
+      confirmText: '退出',
+      confirmColor: '#c0392b',
+      success: async (res) => {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '退出中...', mask: true });
+        const r = await cloud.leaveTable(tableId);
+        wx.hideLoading();
+        if (r.ok) {
+          wx.showToast({ title: '已退出', icon: 'success' });
+          this._loadCloudTables();
+        } else {
+          wx.showModal({ title: '退出失败', content: r.error || '未知', showCancel: false });
+        }
+      }
+    });
+  },
+
+  /** Owner 把成员踢出 */
+  onKickMember(e) {
+    const tableId = e.currentTarget.dataset.tableid;
+    const memberOpenid = e.currentTarget.dataset.openid;
+    const memberName = e.currentTarget.dataset.name;
+    if (!tableId || !memberOpenid) return;
+    wx.showModal({
+      title: '踢出成员',
+      content: `把"${memberName}"踢出后，他在这个牌局看不到了。他之前录的对局会保留。\n\n确定？`,
+      confirmText: '踢出',
+      confirmColor: '#c0392b',
+      success: async (res) => {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '处理中...', mask: true });
+        const r = await cloud.kickMember(tableId, memberOpenid);
+        wx.hideLoading();
+        if (!r.ok) {
+          wx.showModal({ title: '踢出失败', content: r.error || '未知', showCancel: false });
+          return;
+        }
+        wx.showToast({ title: '已踢出', icon: 'success' });
+        // 刷成员列表 + 成员数
+        await this._loadCloudTables();
+        const members = await cloud.getTableMembers(tableId);
+        const newMap = { ...(this.data.membersMap || {}) };
+        newMap[tableId] = members;
+        this.setData({ membersMap: newMap });
       }
     });
   },
